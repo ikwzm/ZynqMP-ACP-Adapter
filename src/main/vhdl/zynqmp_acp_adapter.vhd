@@ -460,6 +460,6 @@ begin
             ACP_BID             => ACP_BID             , -- In  :
             ACP_BRESP           => ACP_BRESP           , -- In  :
             ACP_BVALID          => ACP_BVALID          , -- In  :
-            ACP_BREADY          => ACP_BREADY          , -- Out :
+            ACP_BREADY          => ACP_BREADY            -- Out :
         );
 end RTL;

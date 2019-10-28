@@ -129,7 +129,9 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     type      STATE_TYPE    is (IDLE_STATE, CAlC_STATE, ADDR_STATE);
     signal    curr_state    :  STATE_TYPE;
+    signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_start    :  boolean;
+    signal    xfer_ready    :  boolean;
     signal    xfer_first    :  boolean;
     signal    xfer_last     :  boolean;
     signal    xfer_len      :  unsigned( 8 downto 0);
@@ -137,7 +139,33 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     constant  byte_pos      :  unsigned( 3 downto 0) := (others => '0');
     signal    word_pos      :  unsigned(11 downto 4);
     signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
+    signal    resp_last     :  boolean;
+    signal    resp_valid    :  boolean;
+    signal    resp_ready    :  boolean;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    component ZYNQMP_ACP_RESPONSE_QUEUE 
+        generic (
+            AXI_ID_WIDTH    :  integer := 6;
+            QUEUE_SIZE      :  integer := 1
+        );
+        port(
+            CLK             : in  std_logic;
+            RST             : in  std_logic;
+            CLR             : in  std_logic;
+            I_ID            : in  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+            I_LAST          : in  boolean;
+            I_VALID         : in  boolean;
+            I_READY         : out boolean;
+            Q_ID            : out std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+            Q_LAST          : out boolean;
+            Q_VALID         : out boolean;
+            Q_READY         : in  boolean
+        );
+    end component;
 begin
+    reset <= '0' when (ARESETN = '1') else '1';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -148,16 +176,18 @@ begin
                 curr_state <= IDLE_STATE;
                 xfer_first <= FALSE;
                 xfer_last  <= FALSE;
-                xfer_len   <= (others => '0');
+                xfer_id    <= (others => '0');
                 remain_len <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
+                xfer_len   <= (others => '0');
                 ACP_ARLEN  <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
                 xfer_first <= FALSE;
                 xfer_last  <= FALSE;
+                xfer_id    <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 xfer_len   <= (others => '0');
@@ -169,6 +199,7 @@ begin
                         if (AXI_ARVALID = '1') then
                             curr_state <= CALC_STATE;
                             xfer_first <= TRUE;
+                            xfer_id    <= AXI_ARID;
                             remain_len <= RESIZE(unsigned(AXI_ARLEN), remain_len'length) + 1;
                             page_num   <= unsigned(AXI_ARADDR(page_num'range));
                             word_pos   <= unsigned(AXI_ARADDR(word_pos'range));
@@ -176,7 +207,7 @@ begin
                             curr_state <= IDLE_STATE;
                         end if;
                     when CALC_STATE =>
-                        if (TRUE) then
+                        if (xfer_ready) then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= CALC_STATE;
@@ -213,13 +244,13 @@ begin
     ACP_ARADDR  <= std_logic_vector(page_num) &
                    std_logic_vector(word_pos) &
                    std_logic_vector(byte_pos);
+    ACP_ARID    <= xfer_id;
     xfer_start  <= (curr_state = ADDR_STATE and ACP_ARREADY = '1');
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset) begin
         if (reset = '1') then
-                ACP_ARID     <= (others => '0');
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
@@ -229,7 +260,6 @@ begin
                 ACP_ARREGION <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
-                ACP_ARID     <= (others => '0');
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
@@ -238,7 +268,6 @@ begin
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_ARVALID = '1') then
-                ACP_ARID     <= AXI_ARID     ;
                 ACP_ARSIZE   <= AXI_ARSIZE   ;
                 ACP_ARBURST  <= AXI_ARBURST  ;
                 ACP_ARLOCK   <= AXI_ARLOCK   ;
@@ -249,6 +278,27 @@ begin
             end if;
         end if;
     end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    RQ: ZYNQMP_ACP_RESPONSE_QUEUE              -- 
+        generic map (                          -- 
+            AXI_ID_WIDTH    => AXI_ID_WIDTH  , -- 
+            QUEUE_SIZE      => 1               -- 
+        )                                      -- 
+        port map (                             -- 
+            CLK             => ACLK          , -- In  :
+            RST             => reset         , -- In  :
+            CLR             => clear         , -- In  :
+            I_ID            => xfer_id       , -- In  :
+            I_LAST          => xfer_last     , -- In  :
+            I_VALID         => xfer_start    , -- In  :
+            I_READY         => xfer_ready    , -- Out :
+            Q_ID            => open          , -- Out :
+            Q_LAST          => resp_last     , -- Out :
+            Q_VALID         => resp_valid    , -- Out :
+            Q_READY         => resp_ready      -- In  :
+        );
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -276,7 +326,78 @@ begin
         signal    o_data        :  std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
         signal    o_resp        :  std_logic_vector(1 downto 0);
         signal    o_last        :  std_logic;
+        signal    burst_first   :  boolean;
+        signal    tran_run      :  boolean;
+        signal    tran_start    :  boolean;
+        signal    tran_end      :  boolean;
+        signal    tran_last     :  boolean;
     begin
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        tran_start <= (tran_run = FALSE and resp_valid = TRUE);
+        tran_end   <= (tran_run = TRUE  and o_valid = '1' and o_ready = '1' and o_last = '1');
+        process(ACLK, reset) begin
+            if (reset = '1') then
+                    tran_run <= FALSE;
+            elsif (ACLK'event and ACLK = '1') then
+                if    (clear = '1') then
+                    tran_run <= FALSE;
+                elsif (tran_end   ) then
+                    tran_run <= FALSE;
+                elsif (tran_start ) then
+                    tran_run <= TRUE;
+                end if;
+            end if;
+        end process;
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        process(ACLK, reset) begin
+            if (reset = '1') then
+                        burst_first <= TRUE;
+            elsif (ACLK'event and ACLK = '1') then
+                if (clear = '1') then
+                        burst_first <= TRUE;
+                elsif (tran_start) then
+                        burst_first <= TRUE;
+                elsif (i_valid = '1' and i_ready = '1') then
+                    if (i_last = '1') then
+                        burst_first <= TRUE;
+                    else
+                        burst_first <= FALSE;
+                    end if;
+                end if;
+            end if;
+        end process;
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        process(ACLK, reset) begin
+            if (reset = '1') then
+                    tran_last <= FALSE;
+            elsif (ACLK'event and ACLK = '1') then
+                if (clear = '1') then
+                    tran_last <= FALSE;
+                elsif (resp_valid and resp_ready) then
+                    tran_last <= resp_last;
+                end if;
+            end if;
+        end process;
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        resp_ready <= (burst_first and i_valid = '1' and i_ready = '1');
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        i_enable   <= '1' when (tran_start) or
+                               (tran_run and not tran_end) else '0';
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        o_last  <= i_last when (tran_last) or 
+                               (resp_valid and resp_ready and resp_last) else '0';
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
@@ -313,7 +434,7 @@ begin
             i_word(RRESP_HI downto RRESP_LO) <= ACP_RRESP;
             i_word(RID_HI   downto RID_LO  ) <= ACP_RID;
             i_word(RLAST_POS               ) <= ACP_RLAST;
-            i_data  <= q_word(RRESP_HI downto RRESP_LO);
+            i_data  <= q_word(RDATA_HI downto RDATA_LO);
             i_resp  <= q_word(RRESP_HI downto RRESP_LO);
             i_id    <= q_word(RID_HI   downto RID_LO  );
             i_last  <= q_word(RLAST_POS);
