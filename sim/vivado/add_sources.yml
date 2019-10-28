@@ -1,0 +1,16 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  pipework
+    Format   :  "add_vhdl_file sources_1 #{library_name} #{file_name}"
+    PathList :  
+        - "../../PipeWork/src/"
+
+- Library:
+    Name     :  work
+    Format   :  "add_vhdl_file sources_1 #{library_name} #{file_name}"
+    PathList :  
+        - "../../src/main/vhdl/"
+    Top      :  ["ZYNQMP_ACP_ADAPTER"]
