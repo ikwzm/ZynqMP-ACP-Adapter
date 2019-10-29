@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
 --!     @version 0.1.0
---!     @date    2019/10/25
+--!     @date    2019/10/29
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -118,6 +118,8 @@ use     ieee.numeric_std.all;
 library PipeWork;
 use     PipeWork.Components.QUEUE_RECEIVER;
 use     PipeWork.Components.QUEUE_REGISTER;
+library Dummy_Plug;
+use     Dummy_Plug.UTIL.BIN_TO_STRING;
 architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -127,21 +129,23 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      STATE_TYPE    is (IDLE_STATE, CAlC_STATE, ADDR_STATE);
+    type      STATE_TYPE    is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
     signal    curr_state    :  STATE_TYPE;
     signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_start    :  boolean;
     signal    xfer_ready    :  boolean;
-    signal    xfer_first    :  boolean;
     signal    xfer_last     :  boolean;
     signal    xfer_len      :  unsigned( 8 downto 0);
     signal    remain_len    :  unsigned( 8 downto 0);
+    signal    burst_len     :  unsigned( 7 downto 0);
     constant  byte_pos      :  unsigned( 3 downto 0) := (others => '0');
     signal    word_pos      :  unsigned(11 downto 4);
     signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
     signal    resp_last     :  boolean;
     signal    resp_valid    :  boolean;
     signal    resp_ready    :  boolean;
+    signal    addr_valid    :  std_logic;
+    signal    addr_ready    :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -165,40 +169,34 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
         );
     end component;
 begin
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     reset <= '0' when (ARESETN = '1') else '1';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset)
-        variable len        :  unsigned( 8 downto 0);
+        variable u_word_pos : unsigned(word_pos'high+1 downto word_pos'low);
     begin
         if (reset = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_first <= FALSE;
-                xfer_last  <= FALSE;
                 xfer_id    <= (others => '0');
-                remain_len <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
-                xfer_len   <= (others => '0');
-                ACP_ARLEN  <= (others => '0');
+                remain_len <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_first <= FALSE;
-                xfer_last  <= FALSE;
                 xfer_id    <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
-                xfer_len   <= (others => '0');
                 remain_len <= (others => '0');
-                ACP_ARLEN  <= (others => '0');
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (AXI_ARVALID = '1') then
-                            curr_state <= CALC_STATE;
-                            xfer_first <= TRUE;
+                            curr_state <= WAIT_STATE;
                             xfer_id    <= AXI_ARID;
                             remain_len <= RESIZE(unsigned(AXI_ARLEN), remain_len'length) + 1;
                             page_num   <= unsigned(AXI_ARADDR(page_num'range));
@@ -206,32 +204,23 @@ begin
                         else
                             curr_state <= IDLE_STATE;
                         end if;
-                    when CALC_STATE =>
+                    when WAIT_STATE =>
                         if (xfer_ready) then
                             curr_state <= ADDR_STATE;
                         else
-                            curr_state <= CALC_STATE;
+                            curr_state <= WAIT_STATE;
                         end if;
-                        if (word_pos(5 downto 4) = "00") and (remain_len > 4) then
-                            len := unsigned(remain_len(8 downto 2)) & unsigned'("00");
-                        else
-                            len := unsigned'("000000001");
-                        end if;
-                        xfer_len  <= len;
-                        xfer_last <= (remain_len <= len);
-                        ACP_ARLEN <= std_logic_vector(RESIZE(len-1, ACP_ARLEN'length));
                     when ADDR_STATE =>
-                        if    (ACP_ARREADY = '1' and xfer_last = TRUE ) then
+                        if (addr_ready = '1' and xfer_last = TRUE ) then
                             curr_state <= IDLE_STATE;
-                        elsif (ACP_ARREADY = '1' and xfer_last = FALSE) then
-                            curr_state <= CALC_STATE;
                         else
                             curr_state <= ADDR_STATE;
                         end if;
-                        if (ACP_ARREADY = '1') then
-                            xfer_first <= FALSE;
+                        if (addr_ready = '1') then
+                            u_word_pos := unsigned'("0") & word_pos;
+                            u_word_pos := u_word_pos + xfer_len;
+                            word_pos   <= u_word_pos(word_pos'range);
                             remain_len <= remain_len - xfer_len;
-                            word_pos   <= word_pos   + xfer_len;
                         end if;
                     when others =>
                             curr_state <= IDLE_STATE;
@@ -240,12 +229,69 @@ begin
         end if;
     end process;
     AXI_ARREADY <= '1' when (curr_state = IDLE_STATE) else '0';
-    ACP_ARVALID <= '1' when (curr_state = ADDR_STATE) else '0';
-    ACP_ARADDR  <= std_logic_vector(page_num) &
-                   std_logic_vector(word_pos) &
-                   std_logic_vector(byte_pos);
-    ACP_ARID    <= xfer_id;
-    xfer_start  <= (curr_state = ADDR_STATE and ACP_ARREADY = '1');
+    addr_valid  <= '1' when (curr_state = ADDR_STATE) else '0';
+    xfer_start  <= (addr_valid = '1' and addr_ready = '1');
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    process (word_pos, remain_len)
+        variable length  :  unsigned( 8 downto 0);
+    begin
+        if (word_pos(5 downto 4) = "00") and (remain_len(8 downto 2) /= "00000000") then
+            length := unsigned(remain_len(8 downto 2)) & unsigned'("00");
+        else
+            length := unsigned'("000000001");
+        end if;
+        xfer_len  <= length;
+        xfer_last <= (remain_len <= length);
+        burst_len <= RESIZE(length-1, burst_len'length);
+    end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    AQ: block
+        constant  QUEUE_SIZE    :  integer := 2;
+        constant  RADDR_LO      :  integer := 0;
+        constant  RADDR_HI      :  integer := RADDR_LO  + 12 - 1;
+        constant  RLEN_LO       :  integer := RADDR_HI  +  1;
+        constant  RLEN_HI       :  integer := RLEN_LO   +  8 - 1;
+        constant  WORD_BITS     :  integer := RLEN_HI   - RADDR_LO + 1;
+        signal    i_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_valid       :  std_logic_vector(QUEUE_SIZE  downto 0);
+    begin
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        i_word(RLEN_HI  downto RLEN_LO ) <= std_logic_vector(burst_len);
+        i_word(RADDR_HI downto RADDR_LO) <= std_logic_vector(word_pos ) &
+                                            std_logic_vector(byte_pos );
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        QUEUE: QUEUE_REGISTER                    -- 
+            generic map (                        -- 
+                QUEUE_SIZE  => QUEUE_SIZE      , -- 
+                DATA_BITS   => WORD_BITS         -- 
+            )                                    -- 
+            port map (                           -- 
+                CLK         => ACLK            , -- In  :
+                RST         => reset           , -- In  :
+                CLR         => clear           , -- In  :
+                I_DATA      => i_word          , -- In  :
+                I_VAL       => addr_valid      , -- In  :
+                I_RDY       => addr_ready      , -- Out :
+                Q_DATA      => q_word          , -- Out :
+                Q_VAL       => q_valid         , -- Out :
+                Q_RDY       => ACP_ARREADY       -- In  :
+            );                                   -- 
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        ACP_ARVALID <= q_valid(0);
+        ACP_ARADDR  <= std_logic_vector(page_num) & q_word(RADDR_HI downto RADDR_LO);
+        ACP_ARLEN   <= q_word(RLEN_HI downto RLEN_LO);
+    end block;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -278,6 +324,7 @@ begin
             end if;
         end if;
     end process;
+    ACP_ARID <= xfer_id;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
