@@ -42,8 +42,9 @@ use     ieee.std_logic_1164.all;
 package ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS is
 component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
     generic (
-        NAME            : STRING;
-        SCENARIO_FILE   : STRING
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        FINISH_ABORT    : boolean := FALSE
     );
 end component;
 end package;
@@ -54,8 +55,9 @@ library ieee;
 use     ieee.std_logic_1164.all;
 entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     generic (
-        NAME            : STRING;
-        SCENARIO_FILE   : STRING
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        FINISH_ABORT    : boolean := FALSE
     );
 end     ZYNQMP_ACP_ADAPTER_TEST_BENCH;
 -----------------------------------------------------------------------------------
@@ -720,7 +722,11 @@ begin
         assert (AXI_REPORT.mismatch_count = 0 and
                 ACP_REPORT.mismatch_count = 0)
             report "Simulation complete(mismatch)." severity FAILURE;
-        assert FALSE report "Simulation complete(success)." severity NOTE;
+        if (FINISH_ABORT) then
+            assert FALSE report "Simulation complete(success)." severity FAILURE;
+        else
+            assert FALSE report "Simulation complete(success)." severity NOTE;
+        end if;
         wait;
     end process;
     

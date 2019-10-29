@@ -87,7 +87,9 @@ set_property "top" "Add_Server"  $obj
 # Set 'sim_1' fileset properties
 #
 set current_vivado_version [version -short]
-if       { [string first "2018.3" $current_vivado_version ] == 0 } {
+if       { [string first "2019.1" $current_vivado_version ] == 0 } {
+    set scenario_full_path [file join ".." ".." ".."      $scenario_file ]
+} elseif { [string first "2018.3" $current_vivado_version ] == 0 } {
     set scenario_full_path [file join ".." ".." ".."      $scenario_file ]
 } elseif { [string first "2017"   $current_vivado_version ] == 0 } {
     set scenario_full_path [file join ".." ".." ".." ".." $scenario_file ]
@@ -98,7 +100,7 @@ if       { [string first "2018.3" $current_vivado_version ] == 0 } {
 }
 set obj [get_filesets sim_1]
 set_property "top"     $test_bench $obj
-set_property "generic" "NAME=ZYNQMP_ACP_ADAPTER_TEST SCENARIO_FILE=$scenario_full_path" $obj
+set_property "generic" "SCENARIO_FILE=$scenario_full_path FINISH_ABORT=true" $obj
 
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
