@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
 --!     @version 0.1.0
---!     @date    2019/10/25
+--!     @date    2019/10/31
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -49,7 +49,11 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
                               integer := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
-                              integer := 6
+                              integer := 6;
+        WDATA_QUEUE_SIZE    : --! @brief WRITE DATA QUEUE SIZE :
+                              integer range 4 to 16 := 16;
+        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+                              integer := 4
     );
     port(
     -------------------------------------------------------------------------------
@@ -128,6 +132,8 @@ use     ieee.numeric_std.all;
 library PipeWork;
 use     PipeWork.Components.QUEUE_RECEIVER;
 use     PipeWork.Components.QUEUE_REGISTER;
+use     PipeWork.Components.REDUCER;
+use     PipeWork.Components.SDPRAM;
 architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -137,21 +143,45 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      STATE_TYPE    is (IDLE_STATE, CAlC_STATE, ADDR_STATE);
+    type      STATE_TYPE    is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
     signal    curr_state    :  STATE_TYPE;
     signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_start    :  boolean;
-    signal    xfer_ready    :  boolean;
-    signal    xfer_first    :  boolean;
     signal    xfer_last     :  boolean;
-    signal    xfer_len      :  unsigned( 8 downto 0);
-    signal    remain_len    :  unsigned( 8 downto 0);
+    signal    remain_len    :  integer range 0 to MAX_BURST_LENGTH-1;
     signal    byte_pos      :  unsigned( 3 downto 0);
     signal    word_pos      :  unsigned(11 downto 4);
     signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
-    signal    resp_last     :  boolean;
-    signal    resp_valid    :  boolean;
     signal    resp_ready    :  boolean;
+    constant  WSTRB_ALL_1   :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    burst_len     :  unsigned(7 downto 0);
+    signal    ao_valid      :  std_logic;
+    signal    ao_ready      :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    wi_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+    signal    wi_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+    signal    wi_last       :  std_logic;
+    signal    wi_valid      :  std_logic;
+    signal    wi_ready      :  std_logic;
+    signal    wi_full_burst :  boolean;
+    signal    wi_none_burst :  boolean;
+    signal    wi_next_valid :  boolean;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    wo_last       :  std_logic;
+    signal    wo_valid      :  std_logic;
+    signal    wo_ready      :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    constant  wq_enable     :  std_logic := '1';
+    signal    wq_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -180,72 +210,77 @@ begin
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset)
-        variable len        :  unsigned( 8 downto 0);
+        variable u_word_pos : unsigned(word_pos'high+1 downto word_pos'low);
     begin
         if (reset = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_first <= FALSE;
-                xfer_last  <= FALSE;
                 xfer_id    <= (others => '0');
-                remain_len <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 byte_pos   <= (others => '0');
-                xfer_len   <= (others => '0');
-                ACP_AWLEN  <= (others => '0');
+                remain_len <= 1;
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_first <= FALSE;
-                xfer_last  <= FALSE;
                 xfer_id    <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 byte_pos   <= (others => '0');
-                xfer_len   <= (others => '0');
-                remain_len <= (others => '0');
-                ACP_AWLEN  <= (others => '0');
+                remain_len <= 1;
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (AXI_AWVALID = '1') then
-                            curr_state <= CALC_STATE;
-                            xfer_first <= TRUE;
+                            curr_state <= WAIT_STATE;
                             xfer_id    <= AXI_AWID;
-                            remain_len <= RESIZE(unsigned(AXI_AWLEN), remain_len'length) + 1;
                             page_num   <= unsigned(AXI_AWADDR(page_num'range));
                             word_pos   <= unsigned(AXI_AWADDR(word_pos'range));
                             byte_pos   <= unsigned(AXI_AWADDR(byte_pos'range));
                         else
                             curr_state <= IDLE_STATE;
                         end if;
-                    when CALC_STATE =>
-                        if (xfer_ready) then
+                    when WAIT_STATE =>
+                        if (resp_ready = TRUE and wi_valid = '1') then
                             curr_state <= ADDR_STATE;
                         else
-                            curr_state <= CALC_STATE;
+                            curr_state <= WAIT_STATE;
                         end if;
-                        if (word_pos(5 downto 4) = "00") and (byte_pos = 0) and (remain_len > 4) then
-                            len := unsigned'("000000100");
-                        else
-                            len := unsigned'("000000001");
-                        end if;
-                        xfer_len  <= len;
-                        xfer_last <= (remain_len <= len);
-                        ACP_AWLEN <= std_logic_vector(RESIZE(len-1, ACP_AWLEN'length));
                     when ADDR_STATE =>
-                        if    (ACP_AWREADY = '1' and xfer_last = TRUE ) then
-                            curr_state <= IDLE_STATE;
-                        elsif (ACP_AWREADY = '1' and xfer_last = FALSE) then
-                            curr_state <= CALC_STATE;
-                        else
-                            curr_state <= ADDR_STATE;
-                        end if;
-                        if (ACP_AWREADY = '1') then
-                            xfer_first <= FALSE;
-                            remain_len <= remain_len - xfer_len;
-                            word_pos   <= word_pos   + xfer_len;
+                        if (xfer_start) then
                             byte_pos   <= (others => '0');
+                            if    (wi_full_burst) then
+                                remain_len <= MAX_BURST_LENGTH-1;
+                                word_pos   <= word_pos + MAX_BURST_LENGTH;
+                            else
+                                remain_len <= 1;
+                                word_pos   <= word_pos + 1;
+                            end if;
+                            if    (wi_full_burst) then
+                                curr_state <= DATA_STATE;
+                            elsif (wi_last = '1') then
+                                curr_state <= IDLE_STATE;
+                            elsif (wi_next_valid) then
+                                curr_state <= ADDR_STATE;
+                            else
+                                curr_state <= WAIT_STATE;
+                            end if;
+                        else
+                                curr_state <= ADDR_STATE;
+                        end if;
+                    when DATA_STATE =>
+                        if (wo_valid = '1' and wo_ready = '1') then
+                            if    (remain_len > 1) then
+                                curr_state <= DATA_STATE;
+                            elsif (wi_last = '1') then
+                                curr_state <= IDLE_STATE;
+                            elsif (wi_next_valid) then
+                                curr_state <= ADDR_STATE;
+                            else
+                                curr_state <= WAIT_STATE;
+                            end if;
+                            remain_len <= remain_len - 1;
+                        else
+                            curr_state <= DATA_STATE;
                         end if;
                     when others =>
                             curr_state <= IDLE_STATE;
@@ -254,12 +289,6 @@ begin
         end if;
     end process;
     AXI_AWREADY <= '1' when (curr_state = IDLE_STATE) else '0';
-    ACP_AWVALID <= '1' when (curr_state = ADDR_STATE) else '0';
-    ACP_AWADDR  <= std_logic_vector(page_num) &
-                   std_logic_vector(word_pos) &
-                   std_logic_vector(byte_pos);
-    ACP_AWID    <= xfer_id;
-    xfer_start  <= (curr_state = ADDR_STATE and ACP_AWREADY = '1');
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -292,10 +321,71 @@ begin
             end if;
         end if;
     end process;
+    ACP_AWID    <= xfer_id;
     -------------------------------------------------------------------------------
-    --
+    -- 
     -------------------------------------------------------------------------------
-    DQ: block
+    xfer_start <= (curr_state = ADDR_STATE and ao_ready = '1' and wo_ready = '1') and
+                  (wi_full_burst or wi_none_burst);
+    ao_valid   <= '1' when (xfer_start) else '0';
+    wo_valid   <= '1' when (xfer_start) or
+                           (curr_state = DATA_STATE and wi_valid = '1') else '0';
+    wo_last    <= '1' when (curr_state = ADDR_STATE and wi_none_burst) or
+                           (curr_state = DATA_STATE and remain_len = 1) else '0';
+    wi_ready   <= '1' when (xfer_start) or
+                           (curr_state = DATA_STATE and wo_ready = '1') else '0';
+    burst_len  <= (others => '0') when (wi_none_burst) else 
+                  to_unsigned(MAX_BURST_LENGTH-1, burst_len'length);
+    -------------------------------------------------------------------------------
+    -- Address 
+    -------------------------------------------------------------------------------
+    AQ: block
+        constant  QUEUE_SIZE    :  integer := 2;
+        constant  WADDR_LO      :  integer := 0;
+        constant  WADDR_HI      :  integer := WADDR_LO  + 12 - 1;
+        constant  WLEN_LO       :  integer := WADDR_HI  +  1;
+        constant  WLEN_HI       :  integer := WLEN_LO   +  8 - 1;
+        constant  WORD_BITS     :  integer := WLEN_HI   - WADDR_LO + 1;
+        signal    i_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_valid       :  std_logic_vector(QUEUE_SIZE  downto 0);
+    begin
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        i_word(WLEN_HI  downto WLEN_LO ) <= std_logic_vector(burst_len);
+        i_word(WADDR_HI downto WADDR_LO) <= std_logic_vector(word_pos ) &
+                                            std_logic_vector(byte_pos );
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        QUEUE: QUEUE_REGISTER                    -- 
+            generic map (                        -- 
+                QUEUE_SIZE  => QUEUE_SIZE      , -- 
+                DATA_BITS   => WORD_BITS         -- 
+            )                                    -- 
+            port map (                           -- 
+                CLK         => ACLK            , -- In  :
+                RST         => reset           , -- In  :
+                CLR         => clear           , -- In  :
+                I_DATA      => i_word          , -- In  :
+                I_VAL       => ao_valid        , -- In  :
+                I_RDY       => ao_ready        , -- Out :
+                Q_DATA      => q_word          , -- Out :
+                Q_VAL       => q_valid         , -- Out :
+                Q_RDY       => ACP_AWREADY       -- In  :
+            );                                   -- 
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        ACP_AWVALID <= q_valid(0);
+        ACP_AWADDR  <= std_logic_vector(page_num) & q_word(WADDR_HI downto WADDR_LO);
+        ACP_AWLEN   <= q_word(WLEN_HI downto WLEN_LO);
+    end block;
+    -------------------------------------------------------------------------------
+    -- Write Data Block
+    -------------------------------------------------------------------------------
+    W: block
         constant  IPORT_QUEUE   :  boolean := TRUE;
         constant  OPORT_QUEUE   :  boolean := TRUE;
         constant  WDATA_LO      :  integer := 0;
@@ -304,25 +394,12 @@ begin
         constant  WSTRB_HI      :  integer := WSTRB_LO  + AXI_DATA_WIDTH/8 - 1;
         constant  WLAST_POS     :  integer := WSTRB_HI  + 1;
         constant  WORD_BITS     :  integer := WLAST_POS - WDATA_LO         + 1;
-        constant  i_enable      :  std_logic := '1';
-        signal    i_valid       :  std_logic;
-        signal    i_ready       :  std_logic;
-        signal    i_data        :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        signal    i_strb        :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-        signal    i_last        :  std_logic;
-        signal    o_valid       :  std_logic;
-        signal    o_ready       :  std_logic;
-        signal    o_data        :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        signal    o_strb        :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-        signal    o_last        :  std_logic;
+        signal    ip_valid      :  std_logic;
+        signal    ip_ready      :  std_logic;
+        signal    ip_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+        signal    ip_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+        signal    ip_last       :  std_logic;
     begin
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        o_data  <= i_data;
-        o_strb  <= i_strb;
-        o_valid <= i_valid;
-        i_ready <= o_ready;
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
@@ -339,35 +416,176 @@ begin
                     CLK         => ACLK        , -- In  :
                     RST         => reset       , -- In  :
                     CLR         => clear       , -- In  :
-                    I_ENABLE    => i_enable    , -- In  :
+                    I_ENABLE    => '1'         , -- In  :
                     I_DATA      => i_word      , -- In  :
                     I_VAL       => AXI_WVALID  , -- In  :
                     I_RDY       => AXI_WREADY  , -- Out :
                     O_DATA      => q_word      , -- Out :
-                    O_VAL       => i_valid     , -- Out :
-                    O_RDY       => i_ready       -- In  :
+                    O_VAL       => ip_valid    , -- Out :
+                    O_RDY       => ip_ready      -- In  :
                 );
             i_word(WDATA_HI downto WDATA_LO) <= AXI_WDATA;
             i_word(WSTRB_HI downto WSTRB_LO) <= AXI_WSTRB;
             i_word(WLAST_POS               ) <= AXI_WLAST;
-            i_data  <= q_word(WDATA_HI downto WDATA_LO);
-            i_strb  <= q_word(WSTRB_HI downto WSTRB_LO);
-            i_last  <= q_word(WLAST_POS);
+            ip_data  <= q_word(WDATA_HI downto WDATA_LO);
+            ip_strb  <= q_word(WSTRB_HI downto WSTRB_LO);
+            ip_last  <= q_word(WLAST_POS);
         end generate;
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
         IPORT_BUF: if (IPORT_QUEUE = FALSE) generate
-            i_data  <= AXI_WDATA;
-            i_strb  <= AXI_WSTRB;
-            i_last  <= AXI_WLAST;
-            i_valid <= AXI_WVALID;
-            AXI_WREADY <= i_ready;
+            ip_data  <= AXI_WDATA;
+            ip_strb  <= AXI_WSTRB;
+            ip_last  <= AXI_WLAST;
+            ip_valid <= AXI_WVALID;
+            AXI_WREADY <= ip_ready;
         end generate;
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        OPORT: if (OPORT_QUEUE = TRUE) generate
+        STRB: block
+            signal    i_word   :  std_logic_vector(1 downto 0);
+            constant  q_full   :  std_logic_vector(  MAX_BURST_LENGTH-1 downto 0) := (others => '1');
+            signal    q_word   :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
+            signal    q_valid  :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
+            constant  q_shift  :  std_logic_vector(0 downto 0) := "1";
+        begin
+            -----------------------------------------------------------------------
+            --
+            -----------------------------------------------------------------------
+            QUEUE: REDUCER                          -- 
+               generic map (                        -- 
+                   WORD_BITS   => 2               , -- 
+                   STRB_BITS   => 1               , -- 
+                   I_WIDTH     => 1               , -- 
+                   O_WIDTH     => MAX_BURST_LENGTH, -- 
+                   QUEUE_SIZE  => WDATA_QUEUE_SIZE, -- 
+                   VALID_MIN   => 0               , -- 
+                   VALID_MAX   => MAX_BURST_LENGTH, -- 
+                   O_VAL_SIZE  => 1               , --
+                   O_SHIFT_MIN => q_shift'low     , --
+                   O_SHIFT_MAX => q_shift'high    , --
+                   I_JUSTIFIED => 1               , -- 
+                   FLUSH_ENABLE=> 0                 -- 
+               )                                    -- 
+               port map (                           -- 
+                   CLK         => ACLK            , -- In  :
+                   RST         => reset           , -- In  :
+                   CLR         => clear           , -- In  :
+                   BUSY        => wq_busy         , -- Out :
+                   VALID       => q_valid         , -- Out :
+                   I_ENABLE    => wq_enable       , -- In  :
+                   I_DATA      => i_word          , -- In  :
+                   I_STRB      => "1"             , -- In  :
+                   I_DONE      => ip_last         , -- In  :
+                   I_VAL       => ip_valid        , -- In  :
+                   I_RDY       => ip_ready        , -- Out :
+                   O_DATA      => q_word          , -- Out :
+                   O_STRB      => open            , -- Out :
+                   O_DONE      => open            , -- Out :
+                   O_VAL       => wi_valid        , -- Out :
+                   O_RDY       => wi_ready        , -- In  :
+                   O_SHIFT     => q_shift           -- In  :
+               );                                   --
+            i_word(0) <= '1' when (ip_strb = WSTRB_ALL_1) else '0';
+            i_word(1) <= ip_last;
+            -----------------------------------------------------------------------
+            --
+            -----------------------------------------------------------------------
+            process (q_word, q_valid, word_pos, byte_pos)
+                variable full_burst :  boolean;
+                variable none_burst :  boolean;
+            begin
+                if (word_pos(5 downto 4) = "00" and byte_pos = "0000") then
+                    full_burst := TRUE;
+                    none_burst := FALSE;
+                    for i in 0 to MAX_BURST_LENGTH-1 loop
+                        if (q_valid(i) = '0') or  (q_word(2*i) = '0') then
+                            full_burst := full_burst and FALSE;
+                        end if;
+                        if (q_valid(i) = '1') and (q_word(2*i) = '0') then
+                            none_burst := none_burst or  TRUE;
+                        end if;
+                    end loop;
+                else
+                    full_burst := FALSE;
+                    none_burst := (q_valid(0) = '1');
+                end if;
+                wi_last       <= q_word(1);
+                wi_full_burst <= full_burst;
+                wi_none_burst <= none_burst;
+                xfer_last     <= (full_burst and q_word(2*(MAX_BURST_LENGTH-1)+1) = '1') or
+                                 (none_burst and q_word(                       1) = '1');
+                wi_next_valid <= (q_valid(1) = '1');
+            end process;
+        end block;
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        BUF: block
+            signal    we        :  std_logic_vector(0 downto 0);
+            signal    waddr     :  std_logic_vector(3 downto 0);
+            signal    raddr     :  std_logic_vector(3 downto 0);
+            signal    raddr_q   :  std_logic_vector(3 downto 0);
+        begin
+            we    <= (others => '1') when (ip_valid = '1' and ip_ready = '1') else (others => '0');
+            raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wi_valid = '1' and wi_ready = '1') else raddr_q;
+            process(ACLK, reset) begin
+                if (reset = '1') then
+                        raddr_q <= (others => '0');
+                        waddr   <= (others => '0');
+                elsif (ACLK'event and ACLK = '1') then
+                    if (clear = '1') then
+                        raddr_q <= (others => '0');
+                        waddr   <= (others => '0');
+                    else
+                        raddr_q <= raddr;
+                        if (ip_valid = '1' and ip_ready = '1') then
+                            waddr <= std_logic_vector(unsigned(waddr) + 1);
+                        end if;
+                    end if;
+                end if;
+            end process;
+            DATA: SDPRAM                 -- 
+                generic map(             -- 
+                    DEPTH  =>  11      , -- 2**11 = 2048bit(16*128bit)
+                    RWIDTH =>  7       , -- 2**7  = 128bit
+                    WWIDTH =>  7       , -- 2**7  = 128bit
+                    WEBIT  =>  0       , -- 
+                    ID     =>  0         -- 
+                )                        -- 
+                port map (               -- 
+                    WCLK    => ACLK    , -- In  :
+                    WE      => we      , -- In  :
+                    WADDR   => waddr   , -- In  :
+                    WDATA   => ip_data , -- In  :
+                    RCLK    => ACLK    , -- In  :
+                    RADDR   => raddr   , -- In  :
+                    RDATA   => wi_data   -- Out :
+                );
+            STRB: SDPRAM                 -- 
+                generic map(             -- 
+                    DEPTH  =>  8       , -- 2**8  = 256bit(16*128/8bit)
+                    RWIDTH =>  4       , -- 2**4  = 128/8=16
+                    WWIDTH =>  4       , -- 2**4  = 128/8=16
+                    WEBIT  =>  0       , -- 
+                    ID     =>  0         -- 
+                )                        -- 
+                port map (               -- 
+                    WCLK    => ACLK    , -- In  :
+                    WE      => we      , -- In  :
+                    WADDR   => waddr   , -- In  :
+                    WDATA   => ip_strb , -- In  :
+                    RCLK    => ACLK    , -- In  :
+                    RADDR   => raddr   , -- In  :
+                    RDATA   => wi_strb   -- Out :
+                );
+        end block;
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        OPORT: block
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_valid   :  std_logic_vector(2 downto 0);
@@ -382,102 +600,99 @@ begin
                     RST         => reset       , -- In  :
                     CLR         => clear       , -- In  :
                     I_DATA      => i_word      , -- In  :
-                    I_VAL       => o_valid     , -- In  :
-                    I_RDY       => o_ready     , -- Out :
+                    I_VAL       => wo_valid    , -- In  :
+                    I_RDY       => wo_ready    , -- Out :
                     Q_DATA      => q_word      , -- Out :
                     Q_VAL       => q_valid     , -- Out :
                     Q_RDY       => ACP_WREADY    -- In  :
                 );
-            i_word(WDATA_HI downto WDATA_LO) <= o_data;
-            i_word(WSTRB_HI downto WSTRB_LO) <= o_strb;
-            i_word(WLAST_POS               ) <= o_last;
+            i_word(WDATA_HI downto WDATA_LO) <= wi_data;
+            i_word(WSTRB_HI downto WSTRB_LO) <= wi_strb;
+            i_word(WLAST_POS               ) <= wo_last;
             ACP_WVALID <= q_valid(0);
             ACP_WDATA  <= q_word(WDATA_HI downto WDATA_LO);
             ACP_WSTRB  <= q_word(WSTRB_HI downto WSTRB_LO);
             ACP_WLAST  <= q_word(WLAST_POS               );
-        end generate;
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        OPORT_BUF: if (OPORT_QUEUE = FALSE) generate
-            ACP_WDATA  <= o_data;
-            ACP_WSTRB  <= o_strb;
-            ACP_WLAST  <= o_last;
-            ACP_WVALID <= o_valid;
-            o_ready    <= ACP_WREADY;
-        end generate;
+        end block;
     end block;
     -------------------------------------------------------------------------------
-    --
+    -- Write Response Block
     -------------------------------------------------------------------------------
-    RQ: ZYNQMP_ACP_RESPONSE_QUEUE              -- 
-        generic map (                          -- 
-            AXI_ID_WIDTH    => AXI_ID_WIDTH  , -- 
-            QUEUE_SIZE      => 1               -- 
-        )                                      -- 
-        port map (                             -- 
-            CLK             => ACLK          , -- In  :
-            RST             => reset         , -- In  :
-            CLR             => clear         , -- In  :
-            I_ID            => xfer_id       , -- In  :
-            I_LAST          => xfer_last     , -- In  :
-            I_VALID         => xfer_start    , -- In  :
-            I_READY         => xfer_ready    , -- Out :
-            Q_ID            => open          , -- Out :
-            Q_LAST          => resp_last     , -- Out :
-            Q_VALID         => resp_valid    , -- Out :
-            Q_READY         => resp_ready      -- In  :
-        );
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    BQ: block
-        signal    b_state       :  std_logic_vector(1 downto 0);
-        constant  B_IDLE_STATE  :  std_logic_vector(1 downto 0) := "00";
-        constant  B_IN_STATE    :  std_logic_vector(1 downto 0) := "01";
-        constant  B_OUT_STATE   :  std_logic_vector(1 downto 0) := "10";
+    B: block
+        signal    q_last        :  boolean;
+        signal    q_valid       :  boolean;
+        signal    q_ready       :  boolean;
+        signal    state         :  std_logic_vector(1 downto 0);
+        constant  IDLE_STATE    :  std_logic_vector(1 downto 0) := "00";
+        constant  IN_STATE      :  std_logic_vector(1 downto 0) := "01";
+        constant  OUT_STATE     :  std_logic_vector(1 downto 0) := "10";
     begin
-        ACP_BREADY <= b_state(0);
-        AXI_BVALID <= b_state(1);
-        resp_ready <= (b_state = B_IN_STATE and ACP_BVALID = '1');
-        process(ACLK, reset) begin
+        ---------------------------------------------------------------------------
+        -- Write Response Request Queue
+        ---------------------------------------------------------------------------
+        QUEUE: ZYNQMP_ACP_RESPONSE_QUEUE           -- 
+            generic map (                          -- 
+                AXI_ID_WIDTH    => AXI_ID_WIDTH  , -- 
+                QUEUE_SIZE      => 1               -- 
+            )                                      -- 
+            port map (                             -- 
+                CLK             => ACLK          , -- In  :
+                RST             => reset         , -- In  :
+                CLR             => clear         , -- In  :
+                I_ID            => xfer_id       , -- In  :
+                I_LAST          => xfer_last     , -- In  :
+                I_VALID         => xfer_start    , -- In  :
+                I_READY         => resp_ready    , -- Out :
+                Q_ID            => open          , -- Out :
+                Q_LAST          => q_last        , -- Out :
+                Q_VALID         => q_valid       , -- Out :
+                Q_READY         => q_ready         -- In  :
+            );                                     -- 
+        ---------------------------------------------------------------------------
+        -- Output Signals
+        ---------------------------------------------------------------------------
+        ACP_BREADY <= state(0); -- '1' when (state = IN_STATE ) else '0';
+        AXI_BVALID <= state(1); -- '1' when (state = OUT_STATE) else '0';
+        q_ready    <= (state = IN_STATE and ACP_BVALID = '1');
+        ---------------------------------------------------------------------------
+        -- Finite State Machine
+        ---------------------------------------------------------------------------
+        FSM: process(ACLK, reset) begin
             if (reset = '1') then
-                    b_state   <= B_IDLE_STATE;
+                    state     <= IDLE_STATE;
                     AXI_BRESP <= (others => '0');
                     AXI_BID   <= (others => '0');
             elsif (ACLK'event and ACLK = '1') then
                 if (clear = '1') then
-                    b_state   <= B_IDLE_STATE;
+                    state     <= IDLE_STATE;
                     AXI_BRESP <= (others => '0');
                     AXI_BID   <= (others => '0');
                 else
-                    case b_state is
-                        when B_IDLE_STATE =>
-                            if (resp_valid) then
-                                b_state <= B_IN_STATE;
+                    case state is
+                        when IDLE_STATE =>
+                            if (q_valid) then
+                                state <= IN_STATE;
                             else
-                                b_state <= B_IDLE_STATE;
+                                state <= IDLE_STATE;
                             end if;
-                        when B_IN_STATE =>
-                            if (ACP_BVALID = '1') then
-                                if (resp_last) then
-                                    b_state   <= B_OUT_STATE;
-                                    AXI_BRESP <= ACP_BRESP;
-                                    AXI_BID   <= ACP_BID;
-                                else
-                                    b_state   <= B_IDLE_STATE;
-                                end if;
+                        when IN_STATE =>
+                            if    (ACP_BVALID = '1' and q_last = TRUE ) then
+                                state <= OUT_STATE;
+                            elsif (ACP_BVALID = '1' and q_last = FALSE) then
+                                state <= IDLE_STATE;
                             else
-                                    b_state   <= B_IN_STATE;
+                                state <= IN_STATE;
                             end if;
-                        when B_OUT_STATE =>
+                            AXI_BRESP <= ACP_BRESP;
+                            AXI_BID   <= ACP_BID;
+                        when OUT_STATE =>
                             if (AXI_BREADY = '1') then
-                                b_state <= B_IDLE_STATE;
+                                state <= IDLE_STATE;
                             else
-                                b_state <= B_OUT_STATE;
+                                state <= OUT_STATE;
                             end if;
                         when others => 
-                                b_state <= B_IDLE_STATE;
+                                state <= IDLE_STATE;
                     end case;
                 end if;
             end if;

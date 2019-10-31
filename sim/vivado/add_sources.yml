@@ -7,6 +7,7 @@
     Format   :  "add_vhdl_file sources_1 #{library_name} #{file_name}"
     PathList :  
         - "../../PipeWork/src/"
+    Use      :  ["SDPRAM(XILINX_ULTRASCALE_AUTO_SELECT)"]
 
 - Library:
     Name     :  work
