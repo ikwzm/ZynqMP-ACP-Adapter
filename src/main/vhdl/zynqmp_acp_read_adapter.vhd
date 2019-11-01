@@ -212,16 +212,18 @@ begin
     --
     -------------------------------------------------------------------------------
     process (word_pos, remain_len)
-        variable length  :  unsigned( 8 downto 0);
+        variable length  :  unsigned(8 downto 0);
     begin
-        if (word_pos(5 downto 4) = "00") and (remain_len(8 downto 2) /= "00000000") then
-            length := unsigned(remain_len(8 downto 2)) & unsigned'("00");
+        if (word_pos(5 downto 4) = "00") and (remain_len(8 downto 2) /= "0000000") then
+            length    := unsigned(remain_len(8 downto 2)) & unsigned'("00");
+            xfer_len  <= length;
+            xfer_last <= (remain_len(1 downto 0) = "00");        -- (remain_len <= length)
+            burst_len <= RESIZE(length-1, burst_len'length);
         else
-            length := unsigned'("000000001");
+            xfer_len  <= unsigned'("000000001");
+            xfer_last <= (remain_len(8 downto 1) = "00000000");  -- (remain_len <= 1)
+            burst_len <= (others => '0');
         end if;
-        xfer_len  <= length;
-        xfer_last <= (remain_len <= length);
-        burst_len <= RESIZE(length-1, burst_len'length);
     end process;
     -------------------------------------------------------------------------------
     --
