@@ -30,7 +30,7 @@
 - ACP :
   - AW:
     - AWREADY  : 0
-    - WAIT     : {AWVALID: 1, TIMEOUT: 100}
+    - WAIT     : {AWVALID: 1, TIMEOUT: 100, ON: on}
     - AWREADY  : 1
     - WAIT     : {AWVALID: 1, AWREADY: 1}
     - CHECK    :
@@ -215,37 +215,33 @@
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
+    - WAIT     : 3
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
+    - WAIT     : 3
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1
     - WAIT     : {BVALID: 1, BREADY: 1, TIMEOUT: 100}
     - BVALID   : 0
-    - WAIT     : 1
     - BVALID   : 1
     - BRESP    : OKAY
     - BID      : 1

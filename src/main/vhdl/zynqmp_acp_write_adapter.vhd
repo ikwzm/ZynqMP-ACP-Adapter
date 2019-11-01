@@ -164,14 +164,21 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    wi_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-    signal    wi_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-    signal    wi_last       :  std_logic;
-    signal    wi_valid      :  std_logic;
-    signal    wi_ready      :  std_logic;
-    signal    wi_full_burst :  boolean;
-    signal    wi_none_burst :  boolean;
-    signal    wi_next_valid :  boolean;
+    type      WQ_INFO_TYPE  is record
+              VALID         :  boolean;
+              STRB_ALL_1    :  boolean;
+              LAST          :  boolean;
+    end record;
+    type      WQ_INFO_VECTOR is array(integer range <>) of WQ_INFO_TYPE;
+    signal    wq_info       :  WQ_INFO_VECTOR(0 to WRITE_MAX_LENGTH-1);
+    signal    wq_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+    signal    wq_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+    signal    wq_valid      :  std_logic;
+    signal    wq_ready      :  std_logic;
+    signal    wq_last_word  :  boolean;
+    signal    wq_full_burst :  boolean;
+    signal    wq_none_burst :  boolean;
+    signal    wq_next_valid :  boolean;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -222,7 +229,7 @@ begin
                             curr_state <= IDLE_STATE;
                         end if;
                     when WAIT_STATE =>
-                        if (resp_ready = TRUE and wi_valid = '1') then
+                        if (resp_ready = TRUE and wq_valid = '1') then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= WAIT_STATE;
@@ -230,18 +237,18 @@ begin
                     when ADDR_STATE =>
                         if (xfer_start) then
                             byte_pos   <= (others => '0');
-                            if    (wi_full_burst) then
+                            if    (wq_full_burst) then
                                 remain_len <= WRITE_MAX_LENGTH-1;
                                 word_pos   <= word_pos + WRITE_MAX_LENGTH;
                             else
                                 remain_len <= 1;
                                 word_pos   <= word_pos + 1;
                             end if;
-                            if    (wi_full_burst) then
+                            if    (wq_full_burst) then
                                 curr_state <= DATA_STATE;
-                            elsif (wi_last = '1') then
+                            elsif (wq_last_word ) then
                                 curr_state <= IDLE_STATE;
-                            elsif (wi_next_valid) then
+                            elsif (wq_next_valid) then
                                 curr_state <= ADDR_STATE;
                             else
                                 curr_state <= WAIT_STATE;
@@ -253,9 +260,9 @@ begin
                         if (wo_valid = '1' and wo_ready = '1') then
                             if    (remain_len > 1) then
                                 curr_state <= DATA_STATE;
-                            elsif (wi_last = '1') then
+                            elsif (wq_last_word ) then
                                 curr_state <= IDLE_STATE;
-                            elsif (wi_next_valid) then
+                            elsif (wq_next_valid) then
                                 curr_state <= ADDR_STATE;
                             else
                                 curr_state <= WAIT_STATE;
@@ -308,16 +315,45 @@ begin
     -- 
     -------------------------------------------------------------------------------
     xfer_start <= (curr_state = ADDR_STATE and ao_ready = '1' and wo_ready = '1') and
-                  (wi_full_burst or wi_none_burst);
+                  (wq_full_burst or wq_none_burst);
     ao_valid   <= '1' when (xfer_start) else '0';
     wo_valid   <= '1' when (xfer_start) or
-                           (curr_state = DATA_STATE and wi_valid = '1') else '0';
-    wo_last    <= '1' when (curr_state = ADDR_STATE and wi_none_burst) or
+                           (curr_state = DATA_STATE and wq_valid = '1') else '0';
+    wo_last    <= '1' when (curr_state = ADDR_STATE and wq_none_burst) or
                            (curr_state = DATA_STATE and remain_len = 1) else '0';
-    wi_ready   <= '1' when (xfer_start) or
+    wq_ready   <= '1' when (xfer_start) or
                            (curr_state = DATA_STATE and wo_ready = '1') else '0';
-    burst_len  <= (others => '0') when (wi_none_burst) else 
+    burst_len  <= (others => '0') when (wq_none_burst) else 
                   to_unsigned(WRITE_MAX_LENGTH-1, burst_len'length);
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    process (wq_info, word_pos, byte_pos)
+        variable full_burst :  boolean;
+        variable none_burst :  boolean;
+    begin
+        if (word_pos(5 downto 4) = "00" and byte_pos = "0000") then
+            full_burst := TRUE;
+            none_burst := FALSE;
+            for i in 0 to WRITE_MAX_LENGTH-1 loop
+                if (wq_info(i).VALID = FALSE or  wq_info(i).STRB_ALL_1 = FALSE) then
+                    full_burst := full_burst and FALSE;
+                end if;
+                if (wq_info(i).VALID = TRUE  and wq_info(i).STRB_ALL_1 = FALSE) then
+                    none_burst := none_burst or  TRUE;
+                end if;
+            end loop;
+        else
+            full_burst := FALSE;
+            none_burst := wq_info(0).VALID;
+        end if;
+        wq_last_word  <= wq_info(0).LAST;
+        wq_full_burst <= full_burst;
+        wq_none_burst <= none_burst;
+        xfer_last     <= (full_burst and wq_info(WRITE_MAX_LENGTH-1).LAST) or
+                         (none_burst and wq_info(0                 ).LAST);
+        wq_next_valid <= wq_info(1).VALID;
+    end process;
     -------------------------------------------------------------------------------
     -- Address 
     -------------------------------------------------------------------------------
@@ -426,7 +462,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        STRB: block
+        INFO: block
             signal    i_word   :  std_logic_vector(1 downto 0);
             constant  q_full   :  std_logic_vector(  WRITE_MAX_LENGTH-1 downto 0) := (others => '1');
             signal    q_word   :  std_logic_vector(2*WRITE_MAX_LENGTH-1 downto 0);
@@ -466,8 +502,8 @@ begin
                    O_DATA      => q_word          , -- Out :
                    O_STRB      => open            , -- Out :
                    O_DONE      => open            , -- Out :
-                   O_VAL       => wi_valid        , -- Out :
-                   O_RDY       => wi_ready        , -- In  :
+                   O_VAL       => wq_valid        , -- Out :
+                   O_RDY       => wq_ready        , -- In  :
                    O_SHIFT     => q_shift           -- In  :
                );                                   --
             i_word(0) <= '1' when (ip_strb = WSTRB_ALL_1) else '0';
@@ -475,31 +511,12 @@ begin
             -----------------------------------------------------------------------
             --
             -----------------------------------------------------------------------
-            process (q_word, q_valid, word_pos, byte_pos)
-                variable full_burst :  boolean;
-                variable none_burst :  boolean;
-            begin
-                if (word_pos(5 downto 4) = "00" and byte_pos = "0000") then
-                    full_burst := TRUE;
-                    none_burst := FALSE;
-                    for i in 0 to WRITE_MAX_LENGTH-1 loop
-                        if (q_valid(i) = '0') or  (q_word(2*i) = '0') then
-                            full_burst := full_burst and FALSE;
-                        end if;
-                        if (q_valid(i) = '1') and (q_word(2*i) = '0') then
-                            none_burst := none_burst or  TRUE;
-                        end if;
-                    end loop;
-                else
-                    full_burst := FALSE;
-                    none_burst := (q_valid(0) = '1');
-                end if;
-                wi_last       <= q_word(1);
-                wi_full_burst <= full_burst;
-                wi_none_burst <= none_burst;
-                xfer_last     <= (full_burst and q_word(2*(WRITE_MAX_LENGTH-1)+1) = '1') or
-                                 (none_burst and q_word(                       1) = '1');
-                wi_next_valid <= (q_valid(1) = '1');
+            process (q_word, q_valid) begin
+                for i in wq_info'range loop
+                    wq_info(i).VALID       <= (q_valid( i  ) = '1');
+                    wq_info(i).STRB_ALL_1  <= (q_word(2*i  ) = '1');
+                    wq_info(i).LAST        <= (q_word(2*i+1) = '1');
+                end loop;
             end process;
         end block;
         ---------------------------------------------------------------------------
@@ -512,7 +529,7 @@ begin
             signal    raddr_q   :  std_logic_vector(3 downto 0);
         begin
             we    <= (others => '1') when (ip_valid = '1' and ip_ready = '1') else (others => '0');
-            raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wi_valid = '1' and wi_ready = '1') else raddr_q;
+            raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wq_valid = '1' and wq_ready = '1') else raddr_q;
             process(ACLK, reset) begin
                 if (reset = '1') then
                         raddr_q <= (others => '0');
@@ -544,7 +561,7 @@ begin
                     WDATA   => ip_data , -- In  :
                     RCLK    => ACLK    , -- In  :
                     RADDR   => raddr   , -- In  :
-                    RDATA   => wi_data   -- Out :
+                    RDATA   => wq_data   -- Out :
                 );
             STRB: SDPRAM                 -- 
                 generic map(             -- 
@@ -561,7 +578,7 @@ begin
                     WDATA   => ip_strb , -- In  :
                     RCLK    => ACLK    , -- In  :
                     RADDR   => raddr   , -- In  :
-                    RDATA   => wi_strb   -- Out :
+                    RDATA   => wq_strb   -- Out :
                 );
         end block;
         ---------------------------------------------------------------------------
@@ -588,8 +605,8 @@ begin
                     Q_VAL       => q_valid     , -- Out :
                     Q_RDY       => ACP_WREADY    -- In  :
                 );
-            i_word(WDATA_HI downto WDATA_LO) <= wi_data;
-            i_word(WSTRB_HI downto WSTRB_LO) <= wi_strb;
+            i_word(WDATA_HI downto WDATA_LO) <= wq_data;
+            i_word(WSTRB_HI downto WSTRB_LO) <= wq_strb;
             i_word(WLAST_POS               ) <= wo_last;
             ACP_WVALID <= q_valid(0);
             ACP_WDATA  <= q_word(WDATA_HI downto WDATA_LO);
@@ -658,10 +675,8 @@ begin
                                 state <= IDLE_STATE;
                             end if;
                         when IN_STATE =>
-                            if    (ACP_BVALID = '1' and q_last = TRUE ) then
+                            if (ACP_BVALID = '1' and q_last = TRUE ) then
                                 state <= OUT_STATE;
-                            elsif (ACP_BVALID = '1' and q_last = FALSE) then
-                                state <= IDLE_STATE;
                             else
                                 state <= IN_STATE;
                             end if;
