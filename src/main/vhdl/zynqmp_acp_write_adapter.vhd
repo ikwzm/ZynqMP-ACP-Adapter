@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
 --!     @version 0.1.0
---!     @date    2019/10/31
+--!     @date    2019/11/1
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -47,12 +47,12 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
-                              integer := 128;
+                              integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        WDATA_QUEUE_SIZE    : --! @brief WRITE DATA QUEUE SIZE :
-                              integer range 4 to 16 := 16;
-        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+        WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
+                              integer range 4 to 32 := 16;
+        WRITE_MAX_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer := 4
     );
     port(
@@ -129,11 +129,12 @@ end  ZYNQMP_ACP_WRITE_ADAPTER;
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
-library PipeWork;
-use     PipeWork.Components.QUEUE_RECEIVER;
-use     PipeWork.Components.QUEUE_REGISTER;
-use     PipeWork.Components.REDUCER;
-use     PipeWork.Components.SDPRAM;
+library ZYNQMP_ACP_ADAPTER_LIBRARY;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_RECEIVER;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.REDUCER;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.SDPRAM;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
 architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -148,7 +149,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_start    :  boolean;
     signal    xfer_last     :  boolean;
-    signal    remain_len    :  integer range 0 to MAX_BURST_LENGTH-1;
+    signal    remain_len    :  integer range 0 to WRITE_MAX_LENGTH-1;
     signal    byte_pos      :  unsigned( 3 downto 0);
     signal    word_pos      :  unsigned(11 downto 4);
     signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
@@ -182,29 +183,10 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     constant  wq_enable     :  std_logic := '1';
     signal    wq_busy       :  std_logic;
+begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    component ZYNQMP_ACP_RESPONSE_QUEUE 
-        generic (
-            AXI_ID_WIDTH    :  integer := 6;
-            QUEUE_SIZE      :  integer := 1
-        );
-        port(
-            CLK             : in  std_logic;
-            RST             : in  std_logic;
-            CLR             : in  std_logic;
-            I_ID            : in  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-            I_LAST          : in  boolean;
-            I_VALID         : in  boolean;
-            I_READY         : out boolean;
-            Q_ID            : out std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-            Q_LAST          : out boolean;
-            Q_VALID         : out boolean;
-            Q_READY         : in  boolean
-        );
-    end component;
-begin
     reset <= '0' when (ARESETN = '1') else '1';
     -------------------------------------------------------------------------------
     --
@@ -249,8 +231,8 @@ begin
                         if (xfer_start) then
                             byte_pos   <= (others => '0');
                             if    (wi_full_burst) then
-                                remain_len <= MAX_BURST_LENGTH-1;
-                                word_pos   <= word_pos + MAX_BURST_LENGTH;
+                                remain_len <= WRITE_MAX_LENGTH-1;
+                                word_pos   <= word_pos + WRITE_MAX_LENGTH;
                             else
                                 remain_len <= 1;
                                 word_pos   <= word_pos + 1;
@@ -335,7 +317,7 @@ begin
     wi_ready   <= '1' when (xfer_start) or
                            (curr_state = DATA_STATE and wo_ready = '1') else '0';
     burst_len  <= (others => '0') when (wi_none_burst) else 
-                  to_unsigned(MAX_BURST_LENGTH-1, burst_len'length);
+                  to_unsigned(WRITE_MAX_LENGTH-1, burst_len'length);
     -------------------------------------------------------------------------------
     -- Address 
     -------------------------------------------------------------------------------
@@ -446,9 +428,9 @@ begin
         ---------------------------------------------------------------------------
         STRB: block
             signal    i_word   :  std_logic_vector(1 downto 0);
-            constant  q_full   :  std_logic_vector(  MAX_BURST_LENGTH-1 downto 0) := (others => '1');
-            signal    q_word   :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
-            signal    q_valid  :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
+            constant  q_full   :  std_logic_vector(  WRITE_MAX_LENGTH-1 downto 0) := (others => '1');
+            signal    q_word   :  std_logic_vector(2*WRITE_MAX_LENGTH-1 downto 0);
+            signal    q_valid  :  std_logic_vector(  WRITE_MAX_LENGTH   downto 0);
             constant  q_shift  :  std_logic_vector(0 downto 0) := "1";
         begin
             -----------------------------------------------------------------------
@@ -459,10 +441,10 @@ begin
                    WORD_BITS   => 2               , -- 
                    STRB_BITS   => 1               , -- 
                    I_WIDTH     => 1               , -- 
-                   O_WIDTH     => MAX_BURST_LENGTH, -- 
-                   QUEUE_SIZE  => WDATA_QUEUE_SIZE, -- 
+                   O_WIDTH     => WRITE_MAX_LENGTH, -- 
+                   QUEUE_SIZE  => WRITE_DATA_QUEUE, -- 
                    VALID_MIN   => 0               , -- 
-                   VALID_MAX   => MAX_BURST_LENGTH, -- 
+                   VALID_MAX   => WRITE_MAX_LENGTH, -- 
                    O_VAL_SIZE  => 1               , --
                    O_SHIFT_MIN => q_shift'low     , --
                    O_SHIFT_MAX => q_shift'high    , --
@@ -500,7 +482,7 @@ begin
                 if (word_pos(5 downto 4) = "00" and byte_pos = "0000") then
                     full_burst := TRUE;
                     none_burst := FALSE;
-                    for i in 0 to MAX_BURST_LENGTH-1 loop
+                    for i in 0 to WRITE_MAX_LENGTH-1 loop
                         if (q_valid(i) = '0') or  (q_word(2*i) = '0') then
                             full_burst := full_burst and FALSE;
                         end if;
@@ -515,7 +497,7 @@ begin
                 wi_last       <= q_word(1);
                 wi_full_burst <= full_burst;
                 wi_none_burst <= none_burst;
-                xfer_last     <= (full_burst and q_word(2*(MAX_BURST_LENGTH-1)+1) = '1') or
+                xfer_last     <= (full_burst and q_word(2*(WRITE_MAX_LENGTH-1)+1) = '1') or
                                  (none_burst and q_word(                       1) = '1');
                 wi_next_valid <= (q_valid(1) = '1');
             end process;

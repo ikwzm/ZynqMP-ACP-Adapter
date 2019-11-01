@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.0.1
---!     @date    2019/10/28
+--!     @version 0.1.0
+--!     @date    2019/11/1
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -77,8 +77,8 @@ use     DUMMY_PLUG.CORE.MARCHAL;
 use     DUMMY_PLUG.CORE.REPORT_STATUS_TYPE;
 use     DUMMY_PLUG.CORE.REPORT_STATUS_VECTOR;
 use     DUMMY_PLUG.CORE.MARGE_REPORT_STATUS;
-library PIPEWORK;
-use     PIPEWORK.COMPONENTS.SDPRAM;
+library ZYNQMP_ACP_ADAPTER_LIBRARY;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_ADAPTER;
 architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     -------------------------------------------------------------------------------
     -- 各種定数
@@ -264,98 +264,6 @@ architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     signal   N_FINISH        : std_logic;
     signal   ACP_FINISH      : std_logic;
     signal   AXI_FINISH      : std_logic;
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-    component ZYNQMP_ACP_ADAPTER
-        generic (
-            AXI_ID_WIDTH     : integer := 6;
-            AXI_ADDR_WIDTH   : integer := 64;
-            AXI_DATA_WIDTH   : integer := 128
-        );
-        port(
-            ARESETn          : in    std_logic;
-            ACLK             : in    std_logic;
-            AXI_AWID         : in    std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            AXI_AWADDR       : in    std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-            AXI_AWLEN        : in    std_logic_vector(7 downto 0);
-            AXI_AWSIZE       : in    std_logic_vector(2 downto 0);
-            AXI_AWBURST      : in    std_logic_vector(1 downto 0);
-            AXI_AWLOCK       : in    std_logic_vector(0 downto 0);
-            AXI_AWCACHE      : in    std_logic_vector(3 downto 0);
-            AXI_AWPROT       : in    std_logic_vector(2 downto 0);
-            AXI_AWQOS        : in    std_logic_vector(3 downto 0);
-            AXI_AWREGION     : in    std_logic_vector(3 downto 0);
-            AXI_AWVALID      : in    std_logic;
-            AXI_AWREADY      : out   std_logic;
-            AXI_WDATA        : in    std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-            AXI_WSTRB        : in    std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-            AXI_WLAST        : in    std_logic;
-            AXI_WVALID       : in    std_logic;
-            AXI_WREADY       : out   std_logic;
-            AXI_BID          : out   std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            AXI_BRESP        : out   std_logic_vector(1 downto 0);
-            AXI_BVALID       : out   std_logic;
-            AXI_BREADY       : in    std_logic;
-            AXI_ARID         : in    std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            AXI_ARADDR       : in    std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-            AXI_ARLEN        : in    std_logic_vector(7 downto 0);
-            AXI_ARSIZE       : in    std_logic_vector(2 downto 0);
-            AXI_ARBURST      : in    std_logic_vector(1 downto 0);
-            AXI_ARLOCK       : in    std_logic_vector(0 downto 0);
-            AXI_ARCACHE      : in    std_logic_vector(3 downto 0);
-            AXI_ARPROT       : in    std_logic_vector(2 downto 0);
-            AXI_ARQOS        : in    std_logic_vector(3 downto 0);
-            AXI_ARREGION     : in    std_logic_vector(3 downto 0);
-            AXI_ARVALID      : in    std_logic;
-            AXI_ARREADY      : out   std_logic;
-            AXI_RID          : out   std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            AXI_RDATA        : out   std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-            AXI_RRESP        : out   std_logic_vector(1 downto 0);
-            AXI_RLAST        : out   std_logic;
-            AXI_RVALID       : out   std_logic;
-            AXI_RREADY       : in    std_logic;
-            ACP_AWID         : out   std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            ACP_AWADDR       : out   std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-            ACP_AWLEN        : out   std_logic_vector(7 downto 0);
-            ACP_AWSIZE       : out   std_logic_vector(2 downto 0);
-            ACP_AWBURST      : out   std_logic_vector(1 downto 0);
-            ACP_AWLOCK       : out   std_logic_vector(0 downto 0);
-            ACP_AWCACHE      : out   std_logic_vector(3 downto 0);
-            ACP_AWPROT       : out   std_logic_vector(2 downto 0);
-            ACP_AWQOS        : out   std_logic_vector(3 downto 0);
-            ACP_AWREGION     : out   std_logic_vector(3 downto 0);
-            ACP_AWVALID      : out   std_logic;
-            ACP_AWREADY      : in    std_logic;
-            ACP_WDATA        : out   std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-            ACP_WSTRB        : out   std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-            ACP_WLAST        : out   std_logic;
-            ACP_WVALID       : out   std_logic;
-            ACP_WREADY       : in    std_logic;
-            ACP_BID          : in    std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            ACP_BRESP        : in    std_logic_vector(1 downto 0);
-            ACP_BVALID       : in    std_logic;
-            ACP_BREADY       : out   std_logic;
-            ACP_ARID         : out   std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            ACP_ARADDR       : out   std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-            ACP_ARLEN        : out   std_logic_vector(7 downto 0);
-            ACP_ARSIZE       : out   std_logic_vector(2 downto 0);
-            ACP_ARBURST      : out   std_logic_vector(1 downto 0);
-            ACP_ARLOCK       : out   std_logic_vector(0 downto 0);
-            ACP_ARCACHE      : out   std_logic_vector(3 downto 0);
-            ACP_ARPROT       : out   std_logic_vector(2 downto 0);
-            ACP_ARQOS        : out   std_logic_vector(3 downto 0);
-            ACP_ARREGION     : out   std_logic_vector(3 downto 0);
-            ACP_ARVALID      : out   std_logic;
-            ACP_ARREADY      : in    std_logic;
-            ACP_RID          : in    std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-            ACP_RDATA        : in    std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-            ACP_RRESP        : in    std_logic_vector(1 downto 0);
-            ACP_RLAST        : in    std_logic;
-            ACP_RVALID       : in    std_logic;
-            ACP_RREADY       : out   std_logic
-        );
-    end component;
 begin
     -------------------------------------------------------------------------------
     -- 

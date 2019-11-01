@@ -82,7 +82,7 @@ add_files -fileset constrs_1 -norecurse ./timing.xdc
 # Set 'sources_1' fileset properties
 #
 set obj [get_filesets sources_1]
-set_property "top" "Add_Server"  $obj
+set_property "top" "ZYNQMP_ACP_ADAPTER"  $obj
 #
 # Set 'sim_1' fileset properties
 #

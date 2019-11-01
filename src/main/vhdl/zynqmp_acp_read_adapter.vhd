@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
 --!     @version 0.1.0
---!     @date    2019/10/29
+--!     @date    2019/11/1
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -115,11 +115,10 @@ end  ZYNQMP_ACP_READ_ADAPTER;
 library ieee;
 use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
-library PipeWork;
-use     PipeWork.Components.QUEUE_RECEIVER;
-use     PipeWork.Components.QUEUE_REGISTER;
-library Dummy_Plug;
-use     Dummy_Plug.UTIL.BIN_TO_STRING;
+library ZYNQMP_ACP_ADAPTER_LIBRARY;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_RECEIVER;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
 architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -146,28 +145,6 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     signal    resp_ready    :  boolean;
     signal    addr_valid    :  std_logic;
     signal    addr_ready    :  std_logic;
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    component ZYNQMP_ACP_RESPONSE_QUEUE 
-        generic (
-            AXI_ID_WIDTH    :  integer := 6;
-            QUEUE_SIZE      :  integer := 1
-        );
-        port(
-            CLK             : in  std_logic;
-            RST             : in  std_logic;
-            CLR             : in  std_logic;
-            I_ID            : in  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-            I_LAST          : in  boolean;
-            I_VALID         : in  boolean;
-            I_READY         : out boolean;
-            Q_ID            : out std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-            Q_LAST          : out boolean;
-            Q_VALID         : out boolean;
-            Q_READY         : in  boolean
-        );
-    end component;
 begin
     -------------------------------------------------------------------------------
     --
