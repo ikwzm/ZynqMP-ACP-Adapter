@@ -44,6 +44,8 @@ component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
     generic (
         NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        READ_ENABLE     : boolean := TRUE;
+        WRITE_ENABLE    : boolean := TRUE;
         FINISH_ABORT    : boolean := FALSE
     );
 end component;
@@ -57,6 +59,8 @@ entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     generic (
         NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        READ_ENABLE     : boolean := TRUE;
+        WRITE_ENABLE    : boolean := TRUE;
         FINISH_ABORT    : boolean := FALSE
     );
 end     ZYNQMP_ACP_ADAPTER_TEST_BENCH;
@@ -118,6 +122,15 @@ architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     constant SYNC_WIDTH      : integer :=  2;
     constant GPO_WIDTH       : integer :=  8;
     constant GPI_WIDTH       : integer :=  GPO_WIDTH;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    function ENABLE_TO_INTEGER(ENABLE: boolean) return integer is
+    begin
+        if (ENABLE) then return 1;
+        else             return 0;
+        end if;
+    end function;
     -------------------------------------------------------------------------------
     -- グローバルシグナル.
     -------------------------------------------------------------------------------
@@ -489,7 +502,9 @@ begin
         generic map (
             AXI_ID_WIDTH        => AXI_ID_WIDTH        ,
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
-            AXI_DATA_WIDTH      => AXI_DATA_WIDTH
+            AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
+            READ_ENABLE         => ENABLE_TO_INTEGER(READ_ENABLE ),
+            WRITE_ENABLE        => ENABLE_TO_INTEGER(WRITE_ENABLE)
         )
         port map(
         --------------------------------------------------------------------------

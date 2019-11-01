@@ -7,7 +7,7 @@ set project_name            "zynqmp_acp_adapter"
 set board_part              [get_board_parts -quiet -latest_file_version "*ultra96v1*"]
 set device_parts            "xczu3eg-sbva484-1-e"
 set test_bench              "ZYNQMP_ACP_ADAPTER_TEST_BENCH"
-set scenario_file           [file join $project_directory ".." ".." "src" "test" "scenarios" "zynqmp_acp_adapter_test_bench.snr" ]
+set scenario_file           [file join $project_directory ".." ".." ".." "src" "test" "scenarios" "zynqmp_acp_adapter_write_test.snr" ]
 #
 # Create project
 #
@@ -100,7 +100,7 @@ if       { [string first "2019.1" $current_vivado_version ] == 0 } {
 }
 set obj [get_filesets sim_1]
 set_property "top"     $test_bench $obj
-set_property "generic" "SCENARIO_FILE=$scenario_full_path FINISH_ABORT=true" $obj
+set_property "generic" "SCENARIO_FILE=$scenario_full_path READ_ENABLE=false WRITE_ENABLE=true FINISH_ABORT=true" $obj
 
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
