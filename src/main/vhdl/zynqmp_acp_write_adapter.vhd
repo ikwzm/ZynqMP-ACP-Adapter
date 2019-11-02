@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
 --!     @version 0.1.0
---!     @date    2019/11/1
+--!     @date    2019/11/2
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -53,7 +53,9 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WRITE_MAX_LENGTH    : --! @brief ACP MAX BURST LENGTH :
-                              integer := 4
+                              integer range 4 to 4  := 4;
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
+                              integer range 1 to 4  := 2
     );
     port(
     -------------------------------------------------------------------------------
@@ -139,57 +141,58 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    reset         :  std_logic;
-    constant  clear         :  std_logic := '0';
+    signal    reset             :  std_logic;
+    constant  clear             :  std_logic := '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      STATE_TYPE    is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
-    signal    curr_state    :  STATE_TYPE;
-    signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    xfer_start    :  boolean;
-    signal    xfer_last     :  boolean;
-    signal    remain_len    :  integer range 0 to WRITE_MAX_LENGTH-1;
-    signal    byte_pos      :  unsigned( 3 downto 0);
-    signal    word_pos      :  unsigned(11 downto 4);
-    signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
-    signal    resp_ready    :  boolean;
-    constant  WSTRB_ALL_1   :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0) := (others => '1');
+    type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
+    signal    curr_state        :  STATE_TYPE;
+    signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+    signal    xfer_start        :  boolean;
+    signal    xfer_last         :  boolean;
+    signal    remain_len        :  integer range 0 to WRITE_MAX_LENGTH-1;
+    signal    byte_pos          :  unsigned( 3 downto 0);
+    signal    word_pos          :  unsigned(11 downto 4);
+    signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
+    signal    resp_queue_ready  :  boolean;
+    signal    resp_another_id   :  boolean;
+    constant  WSTRB_ALL_1       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    burst_len     :  unsigned(7 downto 0);
-    signal    ao_valid      :  std_logic;
-    signal    ao_ready      :  std_logic;
+    signal    burst_len         :  unsigned(7 downto 0);
+    signal    ao_valid          :  std_logic;
+    signal    ao_ready          :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      WQ_INFO_TYPE  is record
-              VALID         :  boolean;
-              STRB_ALL_1    :  boolean;
-              LAST          :  boolean;
+    type      WQ_INFO_TYPE      is record
+              VALID             :  boolean;
+              STRB_ALL_1        :  boolean;
+              LAST              :  boolean;
     end record;
-    type      WQ_INFO_VECTOR is array(integer range <>) of WQ_INFO_TYPE;
-    signal    wq_info       :  WQ_INFO_VECTOR(0 to WRITE_MAX_LENGTH-1);
-    signal    wq_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-    signal    wq_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-    signal    wq_valid      :  std_logic;
-    signal    wq_ready      :  std_logic;
-    signal    wq_last_word  :  boolean;
-    signal    wq_full_burst :  boolean;
-    signal    wq_none_burst :  boolean;
-    signal    wq_next_valid :  boolean;
+    type      WQ_INFO_VECTOR    is array(integer range <>) of WQ_INFO_TYPE;
+    signal    wq_info           :  WQ_INFO_VECTOR(0 to WRITE_MAX_LENGTH-1);
+    signal    wq_data           :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+    signal    wq_strb           :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+    signal    wq_valid          :  std_logic;
+    signal    wq_ready          :  std_logic;
+    signal    wq_last_word      :  boolean;
+    signal    wq_full_burst     :  boolean;
+    signal    wq_none_burst     :  boolean;
+    signal    wq_next_valid     :  boolean;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    wo_last       :  std_logic;
-    signal    wo_valid      :  std_logic;
-    signal    wo_ready      :  std_logic;
+    signal    wo_last           :  std_logic;
+    signal    wo_valid          :  std_logic;
+    signal    wo_ready          :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    constant  wq_enable     :  std_logic := '1';
-    signal    wq_busy       :  std_logic;
+    constant  wq_enable         :  std_logic := '1';
+    signal    wq_busy           :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -229,7 +232,9 @@ begin
                             curr_state <= IDLE_STATE;
                         end if;
                     when WAIT_STATE =>
-                        if (resp_ready = TRUE and wq_valid = '1') then
+                        if (wq_valid = '1') and
+                           (resp_queue_ready = TRUE ) and
+                           (resp_another_id  = FALSE) then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= WAIT_STATE;
@@ -629,24 +634,25 @@ begin
         ---------------------------------------------------------------------------
         -- Write Response Request Queue
         ---------------------------------------------------------------------------
-        QUEUE: ZYNQMP_ACP_RESPONSE_QUEUE           -- 
-            generic map (                          -- 
-                AXI_ID_WIDTH    => AXI_ID_WIDTH  , -- 
-                QUEUE_SIZE      => 1               -- 
-            )                                      -- 
-            port map (                             -- 
-                CLK             => ACLK          , -- In  :
-                RST             => reset         , -- In  :
-                CLR             => clear         , -- In  :
-                I_ID            => xfer_id       , -- In  :
-                I_LAST          => xfer_last     , -- In  :
-                I_VALID         => xfer_start    , -- In  :
-                I_READY         => resp_ready    , -- Out :
-                Q_ID            => open          , -- Out :
-                Q_LAST          => q_last        , -- Out :
-                Q_VALID         => q_valid       , -- Out :
-                Q_READY         => q_ready         -- In  :
-            );                                     -- 
+        QUEUE: ZYNQMP_ACP_RESPONSE_QUEUE               -- 
+            generic map (                              -- 
+                AXI_ID_WIDTH    => AXI_ID_WIDTH      , -- 
+                QUEUE_SIZE      => RESP_QUEUE_SIZE     -- 
+            )                                          -- 
+            port map (                                 -- 
+                CLK             => ACLK              , -- In  :
+                RST             => reset             , -- In  :
+                CLR             => clear             , -- In  :
+                I_ID            => xfer_id           , -- In  :
+                I_LAST          => xfer_last         , -- In  :
+                I_VALID         => xfer_start        , -- In  :
+                I_READY         => resp_queue_ready  , -- Out :
+                I_ANOTHER_ID    => resp_another_id   , -- Out :
+                Q_ID            => open              , -- Out :
+                Q_LAST          => q_last            , -- Out :
+                Q_VALID         => q_valid           , -- Out :
+                Q_READY         => q_ready             -- In  :
+            );                                         -- 
         ---------------------------------------------------------------------------
         -- Output Signals
         ---------------------------------------------------------------------------

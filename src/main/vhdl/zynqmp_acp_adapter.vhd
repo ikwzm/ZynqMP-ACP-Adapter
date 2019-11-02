@@ -54,10 +54,14 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        READ_RESP_QUEUE     : --! @brief READ RESPONSE QUEUE SIZE :
+                              integer range 1 to 4  := 2;
         WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WRITE_MAX_LENGTH    : --! @brief WRITE MAX BURST LENGTH :
-                              integer := 4
+                              integer range 4 to 4  := 4;
+        WRITE_RESP_QUEUE    : --! @brief WRITE RESPONSE QUEUE SIZE :
+                              integer range 1 to 4  := 2
     );
     port(
     -------------------------------------------------------------------------------
@@ -195,7 +199,8 @@ begin
             generic map (                                    -- 
                 AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      , -- 
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
-                AXI_ID_WIDTH        => AXI_ID_WIDTH        , -- 
+                AXI_ID_WIDTH        => AXI_ID_WIDTH        , --
+                RESP_QUEUE_SIZE     => READ_RESP_QUEUE     , --
                 DATA_LATENCY        => 2                     -- 
             )                                                -- 
             port map(                                        -- 
@@ -330,7 +335,8 @@ begin
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
                 AXI_ID_WIDTH        => AXI_ID_WIDTH        , -- 
                 WRITE_DATA_QUEUE    => WRITE_DATA_QUEUE    , -- 
-                WRITE_MAX_LENGTH    => WRITE_MAX_LENGTH      -- 
+                WRITE_MAX_LENGTH    => WRITE_MAX_LENGTH    , -- 
+                RESP_QUEUE_SIZE     => WRITE_RESP_QUEUE      --
             )                                                -- 
             port map(                                        -- 
             -----------------------------------------------------------------------

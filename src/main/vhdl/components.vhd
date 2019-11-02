@@ -2,7 +2,7 @@
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
 --!     @version 0.1.0                                                           --
---!     @date    2019/11/01                                                      --
+--!     @date    2019/11/02                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -473,10 +473,14 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        READ_RESP_QUEUE     : --! @brief READ RESPONSE QUEUE SIZE :
+                              integer range 1 to 4  := 2;
         WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WRITE_MAX_LENGTH    : --! @brief WRITE MAX BURST LENGTH :
-                              integer := 4
+                              integer range 4 to 4  := 4;
+        WRITE_RESP_QUEUE    : --! @brief WRITE RESPONSE QUEUE SIZE :
+                              integer range 1 to 4  := 2
     );
     port(
     -------------------------------------------------------------------------------
@@ -605,10 +609,12 @@ component ZYNQMP_ACP_READ_ADAPTER
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
-                              integer := 128;
+                              integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        DATA_LATENCY        : --! @brief RDATA LATENCY
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
+                              integer range 1 to 4  := 2;
+        DATA_LATENCY        : --! @brief RDATA LATENCY :
                               integer := 2
     );
     port(
@@ -765,6 +771,7 @@ component ZYNQMP_ACP_RESPONSE_QUEUE
         I_LAST              : in  boolean;
         I_VALID             : in  boolean;
         I_READY             : out boolean;
+        I_ANOTHER_ID        : out boolean;
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -791,7 +798,9 @@ component ZYNQMP_ACP_WRITE_ADAPTER
         WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WRITE_MAX_LENGTH    : --! @brief ACP MAX BURST LENGTH :
-                              integer := 4
+                              integer range 4 to 4  := 4;
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
+                              integer range 1 to 4  := 2
     );
     port(
     -------------------------------------------------------------------------------

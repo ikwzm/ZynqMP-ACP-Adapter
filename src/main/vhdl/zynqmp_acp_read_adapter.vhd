@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
 --!     @version 0.1.0
---!     @date    2019/11/1
+--!     @date    2019/11/2
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -47,10 +47,12 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
-                              integer := 128;
+                              integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        DATA_LATENCY        : --! @brief RDATA LATENCY
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
+                              integer range 1 to 4  := 2;
+        DATA_LATENCY        : --! @brief RDATA LATENCY :
                               integer := 2
     );
     port(
@@ -123,28 +125,29 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    reset         :  std_logic;
-    constant  clear         :  std_logic := '0';
+    signal    reset             :  std_logic;
+    constant  clear             :  std_logic := '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      STATE_TYPE    is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
-    signal    curr_state    :  STATE_TYPE;
-    signal    xfer_id       :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    xfer_start    :  boolean;
-    signal    xfer_ready    :  boolean;
-    signal    xfer_last     :  boolean;
-    signal    xfer_len      :  unsigned( 8 downto 0);
-    signal    remain_len    :  unsigned( 8 downto 0);
-    signal    burst_len     :  unsigned( 7 downto 0);
-    constant  byte_pos      :  unsigned( 3 downto 0) := (others => '0');
-    signal    word_pos      :  unsigned(11 downto 4);
-    signal    page_num      :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
-    signal    resp_last     :  boolean;
-    signal    resp_valid    :  boolean;
-    signal    resp_ready    :  boolean;
-    signal    addr_valid    :  std_logic;
-    signal    addr_ready    :  std_logic;
+    type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
+    signal    curr_state        :  STATE_TYPE;
+    signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+    signal    xfer_start        :  boolean;
+    signal    xfer_last         :  boolean;
+    signal    xfer_len          :  unsigned( 8 downto 0);
+    signal    remain_len        :  unsigned( 8 downto 0);
+    signal    burst_len         :  unsigned( 7 downto 0);
+    constant  byte_pos          :  unsigned( 3 downto 0) := (others => '0');
+    signal    word_pos          :  unsigned(11 downto 4);
+    signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
+    signal    resp_queue_ready  :  boolean;
+    signal    resp_another_id   :  boolean;
+    signal    resp_last         :  boolean;
+    signal    resp_valid        :  boolean;
+    signal    resp_ready        :  boolean;
+    signal    addr_valid        :  std_logic;
+    signal    addr_ready        :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -182,7 +185,7 @@ begin
                             curr_state <= IDLE_STATE;
                         end if;
                     when WAIT_STATE =>
-                        if (xfer_ready) then
+                        if (resp_queue_ready = TRUE and resp_another_id = FALSE) then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= WAIT_STATE;
@@ -307,23 +310,24 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    RQ: ZYNQMP_ACP_RESPONSE_QUEUE              -- 
-        generic map (                          -- 
-            AXI_ID_WIDTH    => AXI_ID_WIDTH  , -- 
-            QUEUE_SIZE      => 1               -- 
-        )                                      -- 
-        port map (                             -- 
-            CLK             => ACLK          , -- In  :
-            RST             => reset         , -- In  :
-            CLR             => clear         , -- In  :
-            I_ID            => xfer_id       , -- In  :
-            I_LAST          => xfer_last     , -- In  :
-            I_VALID         => xfer_start    , -- In  :
-            I_READY         => xfer_ready    , -- Out :
-            Q_ID            => open          , -- Out :
-            Q_LAST          => resp_last     , -- Out :
-            Q_VALID         => resp_valid    , -- Out :
-            Q_READY         => resp_ready      -- In  :
+    RQ: ZYNQMP_ACP_RESPONSE_QUEUE                  -- 
+        generic map (                              -- 
+            AXI_ID_WIDTH    => AXI_ID_WIDTH      , -- 
+            QUEUE_SIZE      => RESP_QUEUE_SIZE     -- 
+        )                                          -- 
+        port map (                                 -- 
+            CLK             => ACLK              , -- In  :
+            RST             => reset             , -- In  :
+            CLR             => clear             , -- In  :
+            I_ID            => xfer_id           , -- In  :
+            I_LAST          => xfer_last         , -- In  :
+            I_VALID         => xfer_start        , -- In  :
+            I_READY         => resp_queue_ready  , -- Out :
+            I_ANOTHER_ID    => resp_another_id   , -- Out :
+            Q_ID            => open              , -- Out :
+            Q_LAST          => resp_last         , -- Out :
+            Q_VALID         => resp_valid        , -- Out :
+            Q_READY         => resp_ready          -- In  :
         );
     -------------------------------------------------------------------------------
     --

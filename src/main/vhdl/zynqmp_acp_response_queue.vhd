@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_response_queue.vhd
 --!     @brief   ZynqMP ACP Response Queue
 --!     @version 0.1.0
---!     @date    2019/10/28
+--!     @date    2019/11/2
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -63,6 +63,7 @@ entity  ZYNQMP_ACP_RESPONSE_QUEUE is
         I_LAST              : in  boolean;
         I_VALID             : in  boolean;
         I_READY             : out boolean;
+        I_ANOTHER_ID        : out boolean;
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -86,85 +87,135 @@ architecture RTL of ZYNQMP_ACP_RESPONSE_QUEUE is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    intake_valid  :  boolean;
+    type      STATE_TYPE    is record
+              count         :  integer range 0 to COUNT_MAX;
+              id            :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+              flush         :  boolean;
+              valid         :  boolean;
+    end record;
+    type      STATE_VECTOR  is array (integer range <>) of STATE_TYPE;
+    constant  NULL_STATE    :  STATE_TYPE := (
+                                   count => 0,
+                                   id    => (others => '0'),
+                                   flush => FALSE,
+                                   valid => FALSE
+                               );
+    constant  TOP_OF_QUEUE  :  integer := 0;
+    constant  END_OF_QUEUE  :  integer := QUEUE_SIZE-1;
+    signal    curr_queue    :  STATE_VECTOR(TOP_OF_QUEUE to END_OF_QUEUE);
+    signal    next_queue    :  STATE_VECTOR(TOP_OF_QUEUE to END_OF_QUEUE);
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     signal    intake_ready  :  boolean;
-    signal    intake_last   :  boolean;
-    signal    intake_id     :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     signal    outlet_valid  :  boolean;
     signal    outlet_ready  :  boolean;
     signal    outlet_last   :  boolean;
-    signal    outlet_empty  :  boolean;
-    signal    outlet_flush  :  boolean;
-    signal    outlet_id     :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    outlet_count  :  integer range 0 to COUNT_MAX;
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    intake_valid <= I_VALID;
-    intake_last  <= I_LAST;
-    intake_id    <= I_ID;
-    I_READY      <= intake_ready;
+    process (curr_queue, I_VALID, I_LAST, I_ID, intake_ready, outlet_valid, outlet_ready, outlet_last)
+        variable  temp_queue    :  STATE_VECTOR(TOP_OF_QUEUE to END_OF_QUEUE);
+        variable  i_enable      :  boolean;
+    begin
+        if (outlet_valid and outlet_ready) then
+            if (outlet_last) then
+                for i in TOP_OF_QUEUE to END_OF_QUEUE loop
+                    if (i = END_OF_QUEUE) then
+                        temp_queue(i) := NULL_STATE;
+                    else
+                        temp_queue(i) := curr_queue(i+1);
+                    end if;
+                end loop;
+            else
+                for i in TOP_OF_QUEUE to END_OF_QUEUE loop
+                    temp_queue(i) := curr_queue(i);
+                    if (i = TOP_OF_QUEUE) then
+                        temp_queue(i).count := curr_queue(i).count - 1;
+                    end if;
+                end loop;
+            end if;
+        else
+            temp_queue := curr_queue;
+        end if;
+        for i in TOP_OF_QUEUE to END_OF_QUEUE loop
+            if (i = TOP_OF_QUEUE) then
+                i_enable := (temp_queue(i).flush = FALSE);
+            else
+                i_enable := (temp_queue(i).flush = FALSE and temp_queue(i-1).flush = TRUE);
+            end if;
+            if (i_enable and I_VALID and intake_ready) then
+                if (temp_queue(i).valid = FALSE) then
+                    next_queue(i).count <= 1;
+                    next_queue(i).id    <= I_ID;
+                    next_queue(i).flush <= (I_LAST = TRUE);
+                    next_queue(i).valid <= TRUE;
+                else
+                    next_queue(i).count <= temp_queue(i).count + 1;
+                    next_queue(i).id    <= temp_queue(i).id;
+                    next_queue(i).flush <= (I_LAST = TRUE);
+                    next_queue(i).valid <= TRUE;
+                end if;
+            else
+                    next_queue(i).count <= temp_queue(i).count;
+                    next_queue(i).id    <= temp_queue(i).id;
+                    next_queue(i).flush <= temp_queue(i).flush;
+                    next_queue(i).valid <= temp_queue(i).valid;
+            end if;
+        end loop;
+    end process;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    intake_ready <= (outlet_flush = FALSE) or
-                    (outlet_last  = TRUE and outlet_valid = TRUE and outlet_ready = TRUE);
+    process (curr_queue, I_ID)
+        variable  another_id_queued :  boolean;
+    begin
+        another_id_queued := FALSE;
+        for i in TOP_OF_QUEUE to END_OF_QUEUE loop
+            if (curr_queue(i).valid and curr_queue(i).id /= I_ID) then
+                another_id_queued := another_id_queued or TRUE;
+            end if;
+        end loop;
+        I_ANOTHER_ID <= another_id_queued;
+    end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    I_READY <= intake_ready;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process(CLK, RST)
-        variable  next_count :  integer range 0 to COUNT_MAX;
-        variable  next_flush :  boolean;
-        variable  next_empty :  boolean;
     begin
         if (RST = '1') then
+                curr_queue   <= (others => NULL_STATE);
+                intake_ready <= FALSE;
                 outlet_valid <= FALSE;
-                outlet_empty <= TRUE;
-                outlet_flush <= FALSE;
                 outlet_last  <= FALSE;
-                outlet_count <= 0;
-                outlet_id    <= (others => '0');
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
+                curr_queue   <= (others => NULL_STATE);
+                intake_ready <= FALSE;
                 outlet_valid <= FALSE;
-                outlet_empty <= FALSE;
-                outlet_flush <= TRUE;
                 outlet_last  <= FALSE;
-                outlet_count <=  0 ;
-                outlet_id    <= (others => '0');
             else
-                next_count   := outlet_count;
-                next_flush   := outlet_flush;
-                next_empty   := outlet_empty;
-                if (intake_valid and intake_ready) then
-                    if (outlet_flush or outlet_empty) then
-                        next_count := 1;
-                        outlet_id  <= intake_id;
-                    else
-                        next_count := next_count + 1;
-                    end if;
-                    next_empty := (outlet_flush = TRUE);
-                    next_flush := (intake_last  = TRUE);
-                end if;
-                if (outlet_valid and outlet_ready) then
-                    next_count := next_count - 1;
-                end if;
-                outlet_count <= next_count;
-                outlet_flush <= next_flush;
-                outlet_empty <= next_empty;
-                outlet_last  <= (next_count = 1 and next_flush);
-                outlet_valid <= (next_count > 0);
+                curr_queue   <= next_queue;
+                intake_ready <= ((next_queue(END_OF_QUEUE).flush = FALSE));
+                outlet_valid <= ((next_queue(TOP_OF_QUEUE).count > 0    ) and
+                                 (next_queue(TOP_OF_QUEUE).valid = TRUE ));
+                outlet_last  <= ((next_queue(TOP_OF_QUEUE).count = 1) and
+                                 (next_queue(TOP_OF_QUEUE).flush = TRUE ));
             end if;
         end if;
     end process;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    Q_ID    <= outlet_id;
+    Q_ID    <= curr_queue(TOP_OF_QUEUE).id;
     Q_VALID <= outlet_valid;
     Q_LAST  <= outlet_last;
     outlet_ready <= Q_READY;
