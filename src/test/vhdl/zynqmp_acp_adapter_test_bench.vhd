@@ -51,7 +51,7 @@ component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
 end component;
 end package;
 -----------------------------------------------------------------------------------
---
+-- ZYNQMP_ACP_ADAPTER_TEST_BENCH
 -----------------------------------------------------------------------------------
 library ieee;
 use     ieee.std_logic_1164.all;
@@ -655,4 +655,50 @@ begin
     
  -- SYNC_PRINT_0: SYNC_PRINT generic map(string'("AXI4_TEST_1:SYNC(0)")) port map (SYNC(0));
  -- SYNC_PRINT_1: SYNC_PRINT generic map(string'("AXI4_TEST_1:SYNC(1)")) port map (SYNC(1));
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_READ_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_READ_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_READ_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_read_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_READ_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_READ_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        READ_ENABLE     => TRUE          ,
+        WRITE_ENABLE    => FALSE         ,
+        FINISH_ABORT    => FINISH_ABORT
+        );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_WRITE_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_WRITE_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_WRITE_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_write_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_WRITE_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_WRITE_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        READ_ENABLE     => FALSE         ,
+        WRITE_ENABLE    => TRUE          ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
 end MODEL;
