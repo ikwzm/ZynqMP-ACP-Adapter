@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_decerr.vhd
 --!     @brief   ZynqMP ACP Read Decode Error 
---!     @version 0.1.0
---!     @date    2019/11/1
+--!     @version 0.2.0
+--!     @date    2019/11/3
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --

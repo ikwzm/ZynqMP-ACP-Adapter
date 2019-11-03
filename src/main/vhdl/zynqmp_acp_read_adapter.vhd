@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.1.0
---!     @date    2019/11/2
+--!     @version 0.2.0
+--!     @date    2019/11/3
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -120,7 +120,6 @@ use     ieee.numeric_std.all;
 library ZYNQMP_ACP_ADAPTER_LIBRARY;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_RECEIVER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
-use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
 architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -132,22 +131,27 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
     signal    curr_state        :  STATE_TYPE;
-    signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    xfer_start        :  boolean;
-    signal    xfer_last         :  boolean;
-    signal    xfer_len          :  unsigned( 8 downto 0);
-    signal    remain_len        :  unsigned( 8 downto 0);
-    signal    burst_len         :  unsigned( 7 downto 0);
-    constant  byte_pos          :  unsigned( 3 downto 0) := (others => '0');
-    signal    word_pos          :  unsigned(11 downto 4);
-    signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
-    signal    resp_queue_ready  :  boolean;
-    signal    resp_another_id   :  boolean;
-    signal    resp_last         :  boolean;
-    signal    resp_valid        :  boolean;
-    signal    resp_ready        :  boolean;
-    signal    addr_valid        :  std_logic;
-    signal    addr_ready        :  std_logic;
+    signal    skip_len          :  std_logic_vector( 1 downto 0);
+    signal    xfer_len          :  std_logic_vector( 7 downto 0);
+    signal    burst_len         :  std_logic_vector( 7 downto 0);
+    signal    addr_lo           :  std_logic_vector(11 downto 0);
+    signal    addr_hi           :  std_logic_vector(AXI_ADDR_WIDTH-1 downto 12);
+    signal    resp_valid        :  std_logic;
+    signal    resp_ready        :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    type      RDATA_STATE_TYPE is (RDATA_IDLE_STATE,
+                                   RDATA_SKIP_STATE,
+                                   RDATA_XFER_STATE,
+                                   RDATA_POST_STATE,
+                                   RDATA_ERR_STATE
+                                   );
+    signal    rdata_state       :  RDATA_STATE_TYPE;
+    signal    rdata_valid       :  std_logic;
+    signal    rdata_ready       :  std_logic;
+    signal    rdata_skip_len    :  std_logic_vector( 1 downto 0);
+    signal    rdata_xfer_len    :  std_logic_vector( 7 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -156,51 +160,63 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process(ACLK, reset)
-        variable u_word_pos : unsigned(word_pos'high+1 downto word_pos'low);
-    begin
+    process(ACLK, reset) begin
         if (reset = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_id    <= (others => '0');
-                page_num   <= (others => '0');
-                word_pos   <= (others => '0');
-                remain_len <= (others => '0');
+                addr_hi    <= (others => '0');
+                addr_lo    <= (others => '0');
+                burst_len  <= (others => '0');
+                xfer_len   <= (others => '0');
+                skip_len   <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
-                xfer_id    <= (others => '0');
-                page_num   <= (others => '0');
-                word_pos   <= (others => '0');
-                remain_len <= (others => '0');
+                addr_hi    <= (others => '0');
+                addr_lo    <= (others => '0');
+                burst_len  <= (others => '0');
+                xfer_len   <= (others => '0');
+                skip_len   <= (others => '0');
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (AXI_ARVALID = '1') then
-                            curr_state <= WAIT_STATE;
-                            xfer_id    <= AXI_ARID;
-                            remain_len <= RESIZE(unsigned(AXI_ARLEN), remain_len'length) + 1;
-                            page_num   <= unsigned(AXI_ARADDR(page_num'range));
-                            word_pos   <= unsigned(AXI_ARADDR(word_pos'range));
+                            if (resp_ready = '1') then
+                                curr_state <= ADDR_STATE;
+                            else
+                                curr_state <= WAIT_STATE;
+                            end if;
                         else
-                            curr_state <= IDLE_STATE;
+                                curr_state <= IDLE_STATE;
+                        end if;
+                        if (AXI_ARVALID = '1') then
+                            addr_hi <= AXI_ARADDR(addr_hi'range);
+                            if (unsigned(AXI_ARLEN) = 0) then
+                                addr_lo( 3 downto 0) <= (3 downto 0 => '0');
+                                addr_lo(11 downto 4) <= AXI_ARADDR(11 downto 4);
+                                skip_len   <= (others => '0');
+                                xfer_len   <= AXI_ARLEN;
+                                burst_len  <= AXI_ARLEN;
+                            else
+                                addr_lo( 5 downto 0) <= (5 downto 0 => '0');
+                                addr_lo(11 downto 6) <= AXI_ARADDR(11 downto 6);
+                                skip_len   <= AXI_ARADDR(5 downto 4);
+                                xfer_len   <= AXI_ARLEN;
+                                burst_len  <= std_logic_vector(
+                                    unsigned(AXI_ARLEN) +
+                                    unsigned(AXI_ARADDR(5 downto 4))) or "00000011";
+                            end if;
                         end if;
                     when WAIT_STATE =>
-                        if (resp_queue_ready = TRUE and resp_another_id = FALSE) then
+                        if (resp_ready = '1') then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= WAIT_STATE;
                         end if;
                     when ADDR_STATE =>
-                        if (addr_ready = '1' and xfer_last = TRUE ) then
+                        if (ACP_ARREADY = '1') then
                             curr_state <= IDLE_STATE;
                         else
                             curr_state <= ADDR_STATE;
-                        end if;
-                        if (addr_ready = '1') then
-                            u_word_pos := unsigned'("0") & word_pos;
-                            u_word_pos := u_word_pos + xfer_len;
-                            word_pos   <= u_word_pos(word_pos'range);
-                            remain_len <= remain_len - xfer_len;
                         end if;
                     when others =>
                             curr_state <= IDLE_STATE;
@@ -209,76 +225,16 @@ begin
         end if;
     end process;
     AXI_ARREADY <= '1' when (curr_state = IDLE_STATE) else '0';
-    addr_valid  <= '1' when (curr_state = ADDR_STATE) else '0';
-    xfer_start  <= (addr_valid = '1' and addr_ready = '1');
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    process (word_pos, remain_len)
-        variable length  :  unsigned(8 downto 0);
-    begin
-        if (word_pos(5 downto 4) = "00") and (remain_len(8 downto 2) /= "0000000") then
-            length    := unsigned(remain_len(8 downto 2)) & unsigned'("00");
-            xfer_len  <= length;
-            xfer_last <= (remain_len(1 downto 0) = "00");        -- (remain_len <= length)
-            burst_len <= RESIZE(length-1, burst_len'length);
-        else
-            xfer_len  <= unsigned'("000000001");
-            xfer_last <= (remain_len(8 downto 1) = "00000000");  -- (remain_len <= 1)
-            burst_len <= (others => '0');
-        end if;
-    end process;
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    AQ: block
-        constant  QUEUE_SIZE    :  integer := 2;
-        constant  RADDR_LO      :  integer := 0;
-        constant  RADDR_HI      :  integer := RADDR_LO  + 12 - 1;
-        constant  RLEN_LO       :  integer := RADDR_HI  +  1;
-        constant  RLEN_HI       :  integer := RLEN_LO   +  8 - 1;
-        constant  WORD_BITS     :  integer := RLEN_HI   - RADDR_LO + 1;
-        signal    i_word        :  std_logic_vector(WORD_BITS-1 downto 0);
-        signal    q_word        :  std_logic_vector(WORD_BITS-1 downto 0);
-        signal    q_valid       :  std_logic_vector(QUEUE_SIZE  downto 0);
-    begin
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        i_word(RLEN_HI  downto RLEN_LO ) <= std_logic_vector(burst_len);
-        i_word(RADDR_HI downto RADDR_LO) <= std_logic_vector(word_pos ) &
-                                            std_logic_vector(byte_pos );
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        QUEUE: QUEUE_REGISTER                    -- 
-            generic map (                        -- 
-                QUEUE_SIZE  => QUEUE_SIZE      , -- 
-                DATA_BITS   => WORD_BITS         -- 
-            )                                    -- 
-            port map (                           -- 
-                CLK         => ACLK            , -- In  :
-                RST         => reset           , -- In  :
-                CLR         => clear           , -- In  :
-                I_DATA      => i_word          , -- In  :
-                I_VAL       => addr_valid      , -- In  :
-                I_RDY       => addr_ready      , -- Out :
-                Q_DATA      => q_word          , -- Out :
-                Q_VAL       => q_valid         , -- Out :
-                Q_RDY       => ACP_ARREADY       -- In  :
-            );                                   -- 
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        ACP_ARVALID <= q_valid(0);
-        ACP_ARADDR  <= std_logic_vector(page_num) & q_word(RADDR_HI downto RADDR_LO);
-        ACP_ARLEN   <= q_word(RLEN_HI downto RLEN_LO);
-    end block;
+    ACP_ARVALID <= '1' when (curr_state = ADDR_STATE) else '0';
+    ACP_ARADDR  <= addr_hi & addr_lo;
+    ACP_ARLEN   <= burst_len;
+    resp_valid  <= '1' when (curr_state = ADDR_STATE and ACP_ARREADY = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset) begin
         if (reset = '1') then
+                ACP_ARID     <= (others => '0');
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
@@ -288,6 +244,7 @@ begin
                 ACP_ARREGION <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
+                ACP_ARID     <= (others => '0');
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
@@ -296,6 +253,7 @@ begin
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_ARVALID = '1') then
+                ACP_ARID     <= AXI_ARID     ;
                 ACP_ARSIZE   <= AXI_ARSIZE   ;
                 ACP_ARBURST  <= AXI_ARBURST  ;
                 ACP_ARLOCK   <= AXI_ARLOCK   ;
@@ -306,136 +264,171 @@ begin
             end if;
         end if;
     end process;
-    ACP_ARID <= xfer_id;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    RQ: ZYNQMP_ACP_RESPONSE_QUEUE                  -- 
-        generic map (                              -- 
-            AXI_ID_WIDTH    => AXI_ID_WIDTH      , -- 
-            QUEUE_SIZE      => RESP_QUEUE_SIZE     -- 
-        )                                          -- 
-        port map (                                 -- 
-            CLK             => ACLK              , -- In  :
-            RST             => reset             , -- In  :
-            CLR             => clear             , -- In  :
-            I_ID            => xfer_id           , -- In  :
-            I_LAST          => xfer_last         , -- In  :
-            I_VALID         => xfer_start        , -- In  :
-            I_READY         => resp_queue_ready  , -- Out :
-            I_ANOTHER_ID    => resp_another_id   , -- Out :
-            Q_ID            => open              , -- Out :
-            Q_LAST          => resp_last         , -- Out :
-            Q_VALID         => resp_valid        , -- Out :
-            Q_READY         => resp_ready          -- In  :
-        );
+    RESP: block
+        constant  XFER_LEN_LO   :  integer := 0;
+        constant  XFER_LEN_HI   :  integer := XFER_LEN_LO + xfer_len'length - 1;
+        constant  SKIP_LEN_LO   :  integer := XFER_LEN_HI + 1;
+        constant  SKIP_LEN_HI   :  integer := SKIP_LEN_LO + skip_len'length   - 1;
+        constant  WORD_BITS     :  integer := SKIP_LEN_HI + 1;
+        signal    i_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_word        :  std_logic_vector(WORD_BITS-1 downto 0);
+        signal    q_valid       :  std_logic_vector(RESP_QUEUE_SIZE downto 0);
+    begin
+        QUEUE: QUEUE_REGISTER                    -- 
+            generic map (                        -- 
+                QUEUE_SIZE  => RESP_QUEUE_SIZE , -- 
+                DATA_BITS   => WORD_BITS         -- 
+            )                                    -- 
+            port map (                           -- 
+                CLK         => ACLK            , -- In  :
+                RST         => reset           , -- In  :
+                CLR         => clear           , -- In  :
+                I_DATA      => i_word          , -- In  :
+                I_VAL       => resp_valid      , -- In  :
+                I_RDY       => resp_ready      , -- Out :
+                Q_DATA      => q_word          , -- Out :
+                Q_VAL       => q_valid         , -- Out :
+                Q_RDY       => rdata_ready       -- In  :
+            );
+        i_word(XFER_LEN_HI downto XFER_LEN_LO) <= xfer_len;
+        i_word(SKIP_LEN_HI downto SKIP_LEN_LO) <= skip_len;
+        rdata_valid    <= q_valid(0);
+        rdata_xfer_len <= q_word(XFER_LEN_HI downto XFER_LEN_LO);
+        rdata_skip_len <= q_word(SKIP_LEN_HI downto SKIP_LEN_LO);
+    end block;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     DQ: block
-        constant  IPORT_QUEUE   :  boolean := (DATA_LATENCY >= 2);
-        constant  OPORT_QUEUE   :  boolean := (DATA_LATENCY >= 1);
-        constant  RDATA_LO      :  integer := 0;
-        constant  RDATA_HI      :  integer := RDATA_LO  + AXI_DATA_WIDTH - 1;
-        constant  RRESP_LO      :  integer := RDATA_HI  + 1;
-        constant  RRESP_HI      :  integer := RRESP_LO  + 2 - 1;
-        constant  RLAST_POS     :  integer := RRESP_HI  + 1;
-        constant  RID_LO        :  integer := RLAST_POS + 1;
-        constant  RID_HI        :  integer := RID_LO    + AXI_ID_WIDTH   - 1;
-        constant  WORD_BITS     :  integer := RID_HI    - RDATA_LO       + 1;
-        signal    i_enable      :  std_logic;
-        signal    i_valid       :  std_logic;
-        signal    i_ready       :  std_logic;
-        signal    i_id          :  std_logic_vector(AXI_ID_WIDTH  -1 downto 0);
-        signal    i_data        :  std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
-        signal    i_resp        :  std_logic_vector(1 downto 0);
-        signal    i_last        :  std_logic;
-        signal    o_valid       :  std_logic;
-        signal    o_ready       :  std_logic;
-        signal    o_id          :  std_logic_vector(AXI_ID_WIDTH  -1 downto 0);
-        signal    o_data        :  std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
-        signal    o_resp        :  std_logic_vector(1 downto 0);
-        signal    o_last        :  std_logic;
-        signal    burst_first   :  boolean;
-        signal    tran_run      :  boolean;
-        signal    tran_start    :  boolean;
-        signal    tran_end      :  boolean;
-        signal    tran_last     :  boolean;
+        constant  IPORT_QUEUE       :  boolean := (DATA_LATENCY >= 2);
+        constant  OPORT_QUEUE       :  boolean := (DATA_LATENCY >= 1);
+        constant  RDATA_LO          :  integer := 0;
+        constant  RDATA_HI          :  integer := RDATA_LO  + AXI_DATA_WIDTH - 1;
+        constant  RRESP_LO          :  integer := RDATA_HI  + 1;
+        constant  RRESP_HI          :  integer := RRESP_LO  + 2 - 1;
+        constant  RLAST_POS         :  integer := RRESP_HI  + 1;
+        constant  RID_LO            :  integer := RLAST_POS + 1;
+        constant  RID_HI            :  integer := RID_LO    + AXI_ID_WIDTH   - 1;
+        constant  WORD_BITS         :  integer := RID_HI    - RDATA_LO       + 1;
+        signal    i_enable          :  std_logic;
+        signal    i_valid           :  std_logic;
+        signal    i_ready           :  std_logic;
+        signal    i_id              :  std_logic_vector(AXI_ID_WIDTH  -1 downto 0);
+        signal    i_data            :  std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
+        signal    i_resp            :  std_logic_vector(1 downto 0);
+        signal    i_last            :  std_logic;
+        signal    i_done            :  std_logic;
+        signal    o_valid           :  std_logic;
+        signal    o_ready           :  std_logic;
+        signal    o_id              :  std_logic_vector(AXI_ID_WIDTH  -1 downto 0);
+        signal    o_data            :  std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
+        signal    o_resp            :  std_logic_vector(1 downto 0);
+        signal    o_last            :  std_logic;
+        signal    skip_count        :  unsigned(1 downto 0);
+        signal    xfer_count        :  unsigned(7 downto 0);
+        signal    err_id            :  std_logic_vector(AXI_ID_WIDTH  -1 downto 0);
+        signal    err_resp          :  std_logic_vector(1 downto 0);
     begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        tran_start <= (tran_run = FALSE and resp_valid = TRUE);
-        tran_end   <= (tran_run = TRUE  and o_valid = '1' and o_ready = '1' and o_last = '1');
         process(ACLK, reset) begin
             if (reset = '1') then
-                    tran_run <= FALSE;
-            elsif (ACLK'event and ACLK = '1') then
-                if    (clear = '1') then
-                    tran_run <= FALSE;
-                elsif (tran_end   ) then
-                    tran_run <= FALSE;
-                elsif (tran_start ) then
-                    tran_run <= TRUE;
-                end if;
-            end if;
-        end process;
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        process(ACLK, reset) begin
-            if (reset = '1') then
-                        burst_first <= TRUE;
+                    rdata_state <= RDATA_IDLE_STATE;
+                    skip_count  <= (others => '0');
+                    xfer_count  <= (others => '0');
+                    err_id      <= (others => '0');
+                    err_resp    <= (others => '0');
             elsif (ACLK'event and ACLK = '1') then
                 if (clear = '1') then
-                        burst_first <= TRUE;
-                elsif (tran_start) then
-                        burst_first <= TRUE;
-                elsif (i_valid = '1' and i_ready = '1') then
-                    if (i_last = '1') then
-                        burst_first <= TRUE;
-                    else
-                        burst_first <= FALSE;
-                    end if;
+                    rdata_state <= RDATA_IDLE_STATE;
+                    skip_count  <= (others => '0');
+                    xfer_count  <= (others => '0');
+                    err_id      <= (others => '0');
+                    err_resp    <= (others => '0');
+                else
+                    case rdata_state is
+                        when RDATA_IDLE_STATE =>
+                            if (rdata_valid = '1') then
+                                if (unsigned(rdata_skip_len) = 0) then
+                                    rdata_state <= RDATA_XFER_STATE;
+                                else
+                                    rdata_state <= RDATA_SKIP_STATE;
+                                end if;
+                                skip_count <= unsigned(rdata_skip_len);
+                                xfer_count <= unsigned(rdata_xfer_len);
+                            else
+                                rdata_state <= RDATA_IDLE_STATE;
+                            end if;
+                        when RDATA_SKIP_STATE =>
+                            if (i_valid = '1' and i_ready = '1') then
+                                if    (i_last = '1') then
+                                    rdata_state <= RDATA_ERR_STATE;
+                                    err_id      <= i_id;
+                                    err_resp    <= i_resp;
+                                elsif (skip_count <= 1) then
+                                    rdata_state <= RDATA_XFER_STATE;
+                                else
+                                    rdata_state <= RDATA_SKIP_STATE;
+                                end if;
+                                skip_count  <= skip_count - 1;
+                            else
+                                rdata_state <= RDATA_SKIP_STATE;
+                            end if;
+                        when RDATA_XFER_STATE =>
+                            if (i_valid = '1' and i_ready = '1') then
+                                if (i_last = '1') then
+                                    rdata_state <= RDATA_IDLE_STATE;
+                                elsif (xfer_count = 0) then
+                                    rdata_state <= RDATA_POST_STATE;
+                                else
+                                    rdata_state <= RDATA_XFER_STATE;
+                                    xfer_count  <= xfer_count - 1;
+                                end if;
+                            else
+                                rdata_state <= RDATA_XFER_STATE;
+                            end if;
+                        when RDATA_POST_STATE =>
+                            if (i_valid = '1' and i_ready = '1' and i_last = '1') then
+                                rdata_state <= RDATA_IDLE_STATE;
+                            else
+                                rdata_state <= RDATA_POST_STATE;
+                            end if;
+                        when RDATA_ERR_STATE =>
+                            if (o_valid = '1' and o_ready = '1') then
+                                rdata_state <= RDATA_IDLE_STATE;
+                            else
+                                rdata_state <= RDATA_POST_STATE;
+                            end if;
+                        when others =>
+                                rdata_state <= RDATA_IDLE_STATE;
+                    end case;
                 end if;
             end if;
         end process;
+        rdata_ready <= '1' when (rdata_state = RDATA_IDLE_STATE) else '0';
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        process(ACLK, reset) begin
-            if (reset = '1') then
-                    tran_last <= FALSE;
-            elsif (ACLK'event and ACLK = '1') then
-                if (clear = '1') then
-                    tran_last <= FALSE;
-                elsif (resp_valid and resp_ready) then
-                    tran_last <= resp_last;
-                end if;
-            end if;
-        end process;
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        resp_ready <= (burst_first and i_valid = '1' and i_ready = '1');
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        i_enable   <= '1' when (tran_start) or
-                               (tran_run and not tran_end) else '0';
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        o_last  <= i_last when (tran_last) or 
-                               (resp_valid and resp_ready and resp_last) else '0';
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        o_data  <= i_data;
-        o_resp  <= i_resp;
-        o_id    <= i_id;
-        o_valid <= i_valid;
-        i_ready <= o_ready;
+        o_data   <= i_data;
+        o_resp   <= err_resp when (rdata_state = RDATA_ERR_STATE) else i_resp;
+        o_id     <= err_id   when (rdata_state = RDATA_ERR_STATE) else i_id;
+        o_last   <= '1' when (rdata_state = RDATA_XFER_STATE and i_last = '1') or
+                             (rdata_state = RDATA_XFER_STATE and to_01(xfer_count) = 0) or
+                             (rdata_state = RDATA_ERR_STATE) else '0';
+        o_valid  <= '1' when (rdata_state = RDATA_XFER_STATE and i_valid = '1') or
+                             (rdata_state = RDATA_ERR_STATE ) else '0';
+        i_ready  <= '1' when (rdata_state = RDATA_XFER_STATE and o_ready = '1') or
+                             (rdata_state = RDATA_SKIP_STATE) or
+                             (rdata_state = RDATA_POST_STATE) else '0';
+        i_done   <= '1' when (i_valid = '1' and i_ready = '1' and i_last = '1') else '0';
+        i_enable <= '1' when (rdata_state = RDATA_IDLE_STATE and rdata_valid = '1') or
+                             (rdata_state = RDATA_SKIP_STATE and i_done = '0') or
+                             (rdata_state = RDATA_XFER_STATE and i_done = '0') or
+                             (rdata_state = RDATA_POST_STATE and i_done = '0') else '0';
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
