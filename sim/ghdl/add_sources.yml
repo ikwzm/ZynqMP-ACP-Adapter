@@ -1,0 +1,15 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  zynqmp_acp_adapter_library
+    Execute  :  "ghdl -a --mb-comments -P../../Dummy_Plug  --work=#{library_name} #{file_name}"
+    PathList :  
+        - "../../src/main/vhdl/"
+        - "../../PipeWork/src/components/reducer.vhd"
+        - "../../PipeWork/src/components/queue_register.vhd"
+        - "../../PipeWork/src/components/queue_receiver.vhd"
+        - "../../PipeWork/src/components/sdpram.vhd"
+        - "../../PipeWork/src/components/sdpram_model.vhd"
+    Top      :  ["ZYNQMP_ACP_ADAPTER"]
