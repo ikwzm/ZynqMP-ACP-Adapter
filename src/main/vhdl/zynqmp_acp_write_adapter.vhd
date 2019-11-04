@@ -347,6 +347,10 @@ begin
                 if (wq_info(i).VALID = TRUE  and wq_info(i).STRB_ALL_1 = FALSE) then
                     none_burst := none_burst or  TRUE;
                 end if;
+                if (i < WRITE_MAX_LENGTH-1) and
+                   (wq_info(i).VALID = TRUE  and wq_info(i).LAST = TRUE) then
+                    none_burst := none_burst or  TRUE;
+                end if;
             end loop;
         else
             full_burst := FALSE;
