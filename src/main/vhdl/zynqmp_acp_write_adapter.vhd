@@ -630,10 +630,9 @@ begin
         signal    q_last        :  boolean;
         signal    q_valid       :  boolean;
         signal    q_ready       :  boolean;
-        signal    state         :  std_logic_vector(1 downto 0);
-        constant  IDLE_STATE    :  std_logic_vector(1 downto 0) := "00";
-        constant  IN_STATE      :  std_logic_vector(1 downto 0) := "01";
-        constant  OUT_STATE     :  std_logic_vector(1 downto 0) := "10";
+        signal    state         :  std_logic;
+        constant  IN_STATE      :  std_logic := '0';
+        constant  OUT_STATE     :  std_logic := '1';
     begin
         ---------------------------------------------------------------------------
         -- Write Response Request Queue
@@ -660,32 +659,26 @@ begin
         ---------------------------------------------------------------------------
         -- Output Signals
         ---------------------------------------------------------------------------
-        ACP_BREADY <= state(0); -- '1' when (state = IN_STATE ) else '0';
-        AXI_BVALID <= state(1); -- '1' when (state = OUT_STATE) else '0';
-        q_ready    <= (state = IN_STATE and ACP_BVALID = '1');
+        AXI_BVALID <= '1' when (state = OUT_STATE                     ) else '0';
+        ACP_BREADY <= '1' when (state = IN_STATE and q_valid    = TRUE) else '0';
+        q_ready    <=          (state = IN_STATE and ACP_BVALID = '1' );
         ---------------------------------------------------------------------------
         -- Finite State Machine
         ---------------------------------------------------------------------------
         FSM: process(ACLK, reset) begin
             if (reset = '1') then
-                    state     <= IDLE_STATE;
+                    state     <= IN_STATE;
                     AXI_BRESP <= (others => '0');
                     AXI_BID   <= (others => '0');
             elsif (ACLK'event and ACLK = '1') then
                 if (clear = '1') then
-                    state     <= IDLE_STATE;
+                    state     <= IN_STATE;
                     AXI_BRESP <= (others => '0');
                     AXI_BID   <= (others => '0');
                 else
                     case state is
-                        when IDLE_STATE =>
-                            if (q_valid) then
-                                state <= IN_STATE;
-                            else
-                                state <= IDLE_STATE;
-                            end if;
                         when IN_STATE =>
-                            if (ACP_BVALID = '1' and q_last = TRUE ) then
+                            if (q_valid and q_ready and q_last) then
                                 state <= OUT_STATE;
                             else
                                 state <= IN_STATE;
@@ -694,12 +687,12 @@ begin
                             AXI_BID   <= ACP_BID;
                         when OUT_STATE =>
                             if (AXI_BREADY = '1') then
-                                state <= IDLE_STATE;
+                                state <= IN_STATE;
                             else
                                 state <= OUT_STATE;
                             end if;
                         when others => 
-                                state <= IDLE_STATE;
+                                state <= IN_STATE;
                     end case;
                 end if;
             end if;
