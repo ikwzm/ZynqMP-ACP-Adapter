@@ -43,7 +43,7 @@ package ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS is
 component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
     generic (
         NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
-        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
         FINISH_ABORT    : boolean := FALSE
@@ -58,7 +58,7 @@ use     ieee.std_logic_1164.all;
 entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     generic (
         NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
-        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test_bench.snr");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
         FINISH_ABORT    : boolean := FALSE
