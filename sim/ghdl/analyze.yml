@@ -1,0 +1,26 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  zynqmp_acp_adapter_library
+    Execute  :  "ghdl -a --mb-comments --work=#{library_name} #{file_name}"
+    PathList :  
+        - "../../src/main/vhdl/"
+        - "../../PipeWork/src/components/reducer.vhd"
+        - "../../PipeWork/src/components/queue_register.vhd"
+        - "../../PipeWork/src/components/queue_receiver.vhd"
+        - "../../PipeWork/src/components/sdpram.vhd"
+        - "../../PipeWork/src/components/sdpram_model.vhd"
+
+- Library:
+    Name     :  dummy_plug
+    Execute  :  "ghdl -a --mb-comments --work=#{library_name} #{file_name}"
+    Exclude  :  ["../../Dummy_Plug/src/main/vhdl/core/sync_alt.vhd"]
+    PathList :  ["../../Dummy_Plug/src/main/vhdl/"]
+
+- Library:
+    Name     :  work
+    Execute  :  "ghdl -a --mb-comments --work=#{library_name} #{file_name}"
+    PathList :  ["../../src/test/vhdl/"]
+    Top      :  ["ZYNQMP_ACP_ADAPTER_TEST_BENCH"]
