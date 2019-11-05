@@ -4,7 +4,7 @@
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
 set ip_vendor_name          "ikwzm"
 set ip_library_name         "PIPEORK"
-set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_0.1"]
+set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_0.2"]
 set project_name            "zynqmp_acp_adapter"
 set project_directory       [file join [file dirname [info script]] "work"]
 set device_parts            "xc7z010clg400-1"
