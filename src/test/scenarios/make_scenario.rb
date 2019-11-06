@@ -138,6 +138,45 @@ class ScenarioGenerater
   def gen_randam_sequence(default_sequence)
   end
   #-------------------------------------------------------------------------------
+  # ACP リードトランザクション ジェネレーター
+  #-------------------------------------------------------------------------------
+  class ACP_Read_Transaction
+    attr_reader   :addr, :data, :tran, :tran_size, :remain_size
+    def initialize(model, addr, data)
+      @model       = model
+      @addr        = addr
+      @data        = data
+      @remain_size = data.length
+      @data_pos    = 0
+      generate()
+    end
+    def next
+      @addr        = @addr        + @tran_size + @fraction
+      @data_pos    = @data_pos    + @tran_size
+      @remain_size = @remain_size - @tran_size
+      generate()
+    end
+    def generate
+      @fraction = @addr % 16
+      @addr     = @addr - @fraction
+      aligned_size = (@remain_size + @fraction + 15) & ~15
+      if ((@addr % 64 == 0) and (aligned_size >= 64)) then
+        boundary_size = 64
+      else
+        boundary_size = 16
+      end
+      if (@remain_size >= boundary_size - @fraction) then
+        @tran_size    = boundary_size - @fraction
+        post_fraction = 0
+      else
+        @tran_size    = @remain_size
+        post_fraction = boundary_size - @fraction - @tran_size
+      end
+      data  = Array.new(@fraction, 0) + @data[@data_pos,@tran_size] + Array.new(post_fraction, 0)
+      @tran = @model.read_transaction.clone({:Address => @addr, :Data => data})
+    end
+  end
+  #-------------------------------------------------------------------------------
   # シンプルリードトランザクションテスト
   #-------------------------------------------------------------------------------
   def test_simple_read(io)
@@ -159,19 +198,20 @@ class ScenarioGenerater
         io.print "- N : \n"
         io.print "  - SAY : ", title, sprintf(" READ  ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
-        if (((axi_addr % 16) + axi_data.length) <= 16) then
-          boundary_size = 16
-        else
-          boundary_size = 64
-        end
-        pre_len  = axi_addr % boundary_size
-        post_len = (boundary_size-1) - ((axi_data.length + pre_len - 1) % boundary_size)
-        acp_addr = axi_addr - pre_len
-        acp_data = Array.new(pre_len, 0) + axi_data + Array.new(post_len, 0)
         axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data})
-        acp_tran = @acp_model.read_transaction.clone({:Address => acp_addr, :Data => acp_data})
         io.print @axi_model.execute(axi_tran, axi_seq)
-        io.print @acp_model.execute(acp_tran, acp_seq)
+
+        acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data)
+        data_start_event  = :ADDR_XFER
+        data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([8,0,0,0])
+
+        while(acp.remain_size > 0) do
+          acp_seq  = @acp_model.default_sequence.clone({:DataStartEvent => data_start_event, :DataXferPattern => data_xfer_pattern})
+          io.print @acp_model.execute(acp.tran, acp_seq)
+          data_start_event  = :NO_WAIT
+          data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([acp.tran_size>>4,0,0,0])
+          acp.next()
+        end
       }
     }
     io.print "---\n"
