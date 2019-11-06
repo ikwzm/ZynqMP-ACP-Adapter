@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 #---------------------------------------------------------------------------------
 #
-#       Version     :   0.2.0
-#       Created     :   2019/11/4
+#       Version     :   0.3.0
+#       Created     :   2019/11/6
 #       File name   :   make_scneario.rb
 #       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 #       Description :   ZynqMP-ACP-Adapter用シナリオ生成スクリプト
@@ -142,11 +142,13 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   class ACP_Read_Transaction
     attr_reader   :addr, :data, :tran, :tran_size, :remain_size
-    def initialize(model, addr, data)
+    def initialize(model, addr, data, id, cache)
       @model       = model
       @addr        = addr
       @data        = data
       @remain_size = data.length
+      @id          = id
+      @cache       = cache
       @data_pos    = 0
       generate()
     end
@@ -173,7 +175,10 @@ class ScenarioGenerater
         post_fraction = boundary_size - @fraction - @tran_size
       end
       data  = Array.new(@fraction, 0) + @data[@data_pos,@tran_size] + Array.new(post_fraction, 0)
-      @tran = @model.read_transaction.clone({:Address => @addr, :Data => data})
+      tran  = {:Address => @addr, :Data => data}
+      tran[:ID]    = @id    if not @id.nil?
+      tran[:Cache] = @cache if not @cache.nil?
+      @tran = @model.read_transaction.clone(tran)
     end
   end
   #-------------------------------------------------------------------------------
@@ -184,6 +189,7 @@ class ScenarioGenerater
     test_minor_num    = 1
     address_pattern   = (0..64).step(4).to_a
     size_pattern      = [1,4,8,12,16,20,32,48,64,96,128,192,256]
+
     size_pattern.each { |size|
       address_pattern.each { |axi_addr|
         title   = sprintf("%s.%d.%-5d", @name.to_s, test_major_num, test_minor_num)
@@ -191,17 +197,17 @@ class ScenarioGenerater
         if ((axi_addr % @max_xfer_size) + size) > @max_xfer_size then
           size = @max_xfer_size - (axi_addr % @max_xfer_size)
         end
-        axi_data = (1..size).collect{rand(256)}
-        axi_seq  = @axi_model.default_sequence.clone({})
-        acp_seq  = @acp_model.default_sequence.clone({})
+
         io.print "---\n"
         io.print "- N : \n"
         io.print "  - SAY : ", title, sprintf(" READ  ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
+        axi_data = (1..size).collect{rand(256)}
         axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data})
+        axi_seq  = @axi_model.default_sequence.clone({})
         io.print @axi_model.execute(axi_tran, axi_seq)
 
-        acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data)
+        acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, nil, nil)
         data_start_event  = :ADDR_XFER
         data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([8,0,0,0])
 
@@ -209,7 +215,7 @@ class ScenarioGenerater
           acp_seq  = @acp_model.default_sequence.clone({:DataStartEvent => data_start_event, :DataXferPattern => data_xfer_pattern})
           io.print @acp_model.execute(acp.tran, acp_seq)
           data_start_event  = :NO_WAIT
-          data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([acp.tran_size>>4,0,0,0])
+          data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([0,0,0,0])
           acp.next()
         end
       }
@@ -227,6 +233,7 @@ class ScenarioGenerater
     addr_delay_cycle_pattern = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
     data_xfer_pattern        = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
     resp_delay_cycle_pattern = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
+
     (1..1000).each {|test_minor_num|  
       title    = sprintf("%s.%d.%-5d", @name.to_s, test_major_num, test_minor_num)
       axi_addr = rand(@max_xfer_size) + (rand(0xFFFFF) * 0x1000)
@@ -237,42 +244,75 @@ class ScenarioGenerater
         size = @max_xfer_size - (axi_addr % @max_xfer_size)
       end
 
-      axi_data  = (1..size).collect{rand(256)}
-      axi_seq   = @axi_model.default_sequence.clone({
-        :AddrStartEvent     => addr_start_event_pattern[rand(addr_start_event_pattern.size)],
-        :DataStartEvent     => data_start_event_pattern[rand(data_start_event_pattern.size)],
-        :ResponseStartEvent => resp_start_event_pattern[rand(resp_start_event_pattern.size)],
-        :AddrDelayCycle     => addr_delay_cycle_pattern.next,
-        :DataXferPattern    => data_xfer_pattern.next,
-        :ResponseDeleyCycle => resp_delay_cycle_pattern.next
-      })
-      acp_seq   = @acp_model.default_sequence.clone({
-        :AddrStartEvent     => addr_start_event_pattern[rand(addr_start_event_pattern.size)],
-        :DataStartEvent     => data_start_event_pattern[rand(data_start_event_pattern.size)],
-        :ResponseStartEvent => resp_start_event_pattern[rand(resp_start_event_pattern.size)],
-        :AddrDelayCycle     => addr_delay_cycle_pattern.next,
-        :DataXferPattern    => data_xfer_pattern.next,
-        :ResponseDeleyCycle => resp_delay_cycle_pattern.next
-      })
       io.print "---\n"
       io.print "- N : \n"
       io.print "  - SAY : ", title, sprintf(" READ  ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
-      if (((axi_addr % 16) + axi_data.length) <= 16) then
-        boundary_size = 16
-      else
-        boundary_size = 64
-      end
-      pre_len  = axi_addr % boundary_size
-      post_len = (boundary_size-1) - ((axi_data.length + pre_len - 1) % boundary_size)
-      acp_addr = axi_addr - pre_len
-      acp_data = Array.new(pre_len, 0) + axi_data + Array.new(post_len, 0)
+      axi_data = (1..size).collect{rand(256)}
       axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache})
-      acp_tran = @acp_model.read_transaction.clone({:Address => acp_addr, :Data => acp_data, :ID => axi_id, :Cache => axi_cache})
+      axi_seq  = @axi_model.default_sequence.clone({
+        :AddrStartEvent     => addr_start_event_pattern[rand(addr_start_event_pattern.size)],
+        :DataStartEvent     => data_start_event_pattern[rand(data_start_event_pattern.size)],
+        :ResponseStartEvent => resp_start_event_pattern[rand(resp_start_event_pattern.size)],
+        :AddrDelayCycle     => addr_delay_cycle_pattern.next,
+        :DataXferPattern    => data_xfer_pattern.next,
+        :ResponseDeleyCycle => resp_delay_cycle_pattern.next
+      })
       io.print @axi_model.execute(axi_tran, axi_seq)
-      io.print @acp_model.execute(acp_tran, acp_seq)
+
+      acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache)
+      data_start_event  = data_start_event_pattern[rand(data_start_event_pattern.size)]
+
+      while(acp.remain_size > 0) do
+        acp_seq  = @acp_model.default_sequence.clone({
+          :AddrStartEvent     => addr_start_event_pattern[rand(addr_start_event_pattern.size)],
+          :DataStartEvent     => data_start_event,
+          :AddrDelayCycle     => addr_delay_cycle_pattern.next,
+          :DataXferPattern    => data_xfer_pattern.next
+        })
+        io.print @acp_model.execute(acp.tran, acp_seq)
+        data_start_event  = :NO_WAIT
+        acp.next()
+      end
     }
     io.print "---\n"
+  end
+  #-------------------------------------------------------------------------------
+  # ACP ライトトランザクション ジェネレーター
+  #-------------------------------------------------------------------------------
+  class ACP_Write_Transaction
+    attr_reader   :addr, :data, :tran, :tran_size, :remain_size
+    def initialize(model, addr, data, id, cache)
+      @model       = model
+      @addr        = addr
+      @data        = data
+      @remain_size = data.length
+      @id          = id
+      @cache       = cache
+      @data_pos    = 0
+      generate()
+    end
+    def next
+      @addr        = @addr        + @tran_size
+      @data_pos    = @data_pos    + @tran_size
+      @remain_size = @remain_size - @tran_size
+      generate()
+    end
+    def generate
+      if ((@addr % 64) == 0) then
+        @tran_size = (@remain_size < 64) ? 16 : 64
+      else
+        @tran_size = 16-(@addr % 16)
+      end
+      if (@remain_size < @tran_size) then
+        @tran_size = @remain_size
+      end
+      data  = @data[@data_pos,@tran_size]
+      tran  = {:Address => @addr, :Data => data}
+      tran[:ID]    = @id    if not @id.nil?
+      tran[:Cache] = @cache if not @cache.nil?
+      @tran = @model.write_transaction.clone(tran)
+    end
   end
   #-------------------------------------------------------------------------------
   # シンプルライトトランザクションテスト
@@ -297,29 +337,16 @@ class ScenarioGenerater
 
         axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data})
         io.print @axi_model.execute(axi_tran, axi_seq)
-        acp_addr   = axi_addr
-        data_pos   = 0
-        remain_len = axi_data.length
+
+        acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, nil, nil)
         resp_start_event = :ADDR_XFER
 
-        while(remain_len > 0) do
-          if ((acp_addr % 64) == 0) then
-            xfer_len = (remain_len < 64) ? 16 : 64
-          else
-            xfer_len = 16-(acp_addr % 16)
-          end
-          if (remain_len < xfer_len) then
-            xfer_len = remain_len
-          end
-          resp_delay_cycle = (xfer_len > 16) ? 4 : 1
-          acp_data = axi_data[data_pos, xfer_len]
-          acp_tran = @acp_model.write_transaction.clone({:Address => acp_addr, :Data => acp_data})
+        while(acp.remain_size > 0) do
+          resp_delay_cycle = (acp.tran_size > 16) ? 4 : 1
           acp_seq  = @acp_model.default_sequence.clone({:ResponseStartEvent => resp_start_event, :ResponseDelayCycle => resp_delay_cycle})
-          io.print @acp_model.execute(acp_tran, acp_seq)
-          remain_len = remain_len - xfer_len
-          acp_addr   = acp_addr   + xfer_len
-          data_pos   = data_pos   + xfer_len
+          io.print @acp_model.execute(acp.tran, acp_seq)
           resp_start_event = :NO_WAIT
+          acp.next
         end
       }
     }
@@ -360,29 +387,26 @@ class ScenarioGenerater
 
       axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache})
       io.print @axi_model.execute(axi_tran, axi_seq)
-      acp_addr   = axi_addr
-      data_pos   = 0
-      remain_len = axi_data.length
+
+      acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache)
+      addr_start_event = addr_start_event_pattern[rand(addr_start_event_pattern.size)]
+      data_start_event = data_start_event_pattern[rand(data_start_event_pattern.size)]
       resp_start_event = :ADDR_XFER
 
-      while(remain_len > 0) do
-        if ((acp_addr % 64) == 0) then
-          xfer_len = (remain_len < 64) ? 16 : 64
-        else
-          xfer_len = 16-(acp_addr % 16)
-        end
-        if (remain_len < xfer_len) then
-          xfer_len = remain_len
-        end
-        resp_delay_cycle = (xfer_len > 16) ? 16 : 4
-        acp_data = axi_data[data_pos, xfer_len]
-        acp_tran = @acp_model.write_transaction.clone({:Address => acp_addr, :Data => acp_data, :ID => axi_id, :Cache => axi_cache})
-        acp_seq  = @acp_model.default_sequence.clone({:ResponseStartEvent => resp_start_event, :ResponseDelayCycle => resp_delay_cycle})
-        io.print @acp_model.execute(acp_tran, acp_seq)
-        remain_len = remain_len - xfer_len
-        acp_addr   = acp_addr   + xfer_len
-        data_pos   = data_pos   + xfer_len
+      while(acp.remain_size > 0) do
+        resp_delay_cycle = (acp.tran_size > 16) ? 16 : 4
+        acp_seq  = @acp_model.default_sequence.clone({
+          :AddrStartEvent     => addr_start_event,
+          :DataStartEvent     => data_start_event,
+          :AddrDelayCycle     => addr_delay_cycle_pattern.next,
+          :DataXferPattern    => data_xfer_pattern.next,
+          :ResponseStartEvent => resp_start_event,
+          :ResponseDelayCycle => resp_delay_cycle
+        })
+        io.print @acp_model.execute(acp.tran, acp_seq)
+        data_start_event = :NO_WAIT
         resp_start_event = :NO_WAIT
+        acp.next
       end
     }
     io.print "---\n"
