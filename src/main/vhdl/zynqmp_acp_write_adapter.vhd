@@ -164,6 +164,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     signal    burst_len         :  unsigned(7 downto 0);
     signal    ao_valid          :  std_logic;
     signal    ao_ready          :  std_logic;
+    signal    ao_empty          :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -222,7 +223,7 @@ begin
             else
                 case curr_state is
                     when IDLE_STATE =>
-                        if (AXI_AWVALID = '1') then
+                        if (AXI_AWVALID = '1' and ao_empty = '1') then
                             curr_state <= WAIT_STATE;
                             xfer_id    <= AXI_AWID;
                             page_num   <= unsigned(AXI_AWADDR(page_num'range));
@@ -251,7 +252,7 @@ begin
                             end if;
                             if    (wq_full_burst) then
                                 curr_state <= DATA_STATE;
-                            elsif (wq_last_word ) then
+                            elsif (wq_last_word) then
                                 curr_state <= IDLE_STATE;
                             elsif (wq_next_valid) then
                                 curr_state <= ADDR_STATE;
@@ -265,7 +266,7 @@ begin
                         if (wo_valid = '1' and wo_ready = '1') then
                             if    (remain_len > 1) then
                                 curr_state <= DATA_STATE;
-                            elsif (wq_last_word ) then
+                            elsif (wq_last_word) then
                                 curr_state <= IDLE_STATE;
                             elsif (wq_next_valid) then
                                 curr_state <= ADDR_STATE;
@@ -282,7 +283,7 @@ begin
             end if;
         end if;
     end process;
-    AXI_AWREADY <= '1' when (curr_state = IDLE_STATE) else '0';
+    AXI_AWREADY <= '1' when (curr_state = IDLE_STATE and ao_empty = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -304,7 +305,7 @@ begin
                 ACP_AWPROT   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
-            elsif (curr_state = IDLE_STATE and AXI_AWVALID = '1') then
+            elsif (curr_state = IDLE_STATE and AXI_AWVALID = '1' and ao_empty = '1') then
                 ACP_AWSIZE   <= AXI_AWSIZE   ;
                 ACP_AWBURST  <= AXI_AWBURST  ;
                 ACP_AWLOCK   <= AXI_AWLOCK   ;
@@ -405,6 +406,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
+        ao_empty    <= '1' when (q_valid(0) = '0') else '0';
         ACP_AWVALID <= q_valid(0);
         ACP_AWADDR  <= std_logic_vector(page_num) & q_word(WADDR_HI downto WADDR_LO);
         ACP_AWLEN   <= q_word(WLEN_HI downto WLEN_LO);
