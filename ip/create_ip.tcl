@@ -1,11 +1,14 @@
 #
 # create_ip.tcl  Tcl script for create project and generate IP
 #
+set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
+set ip_version              "0.3"
+set ip_core_revision        3
 set ip_vendor_name          "ikwzm"
 set ip_library_name         "PIPEORK"
-set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_0.2"]
-set project_name            "zynqmp_acp_adapter"
+
+set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_$ip_version"]
 set project_directory       [file join [file dirname [info script]] "work"]
 set device_parts            "xc7z010clg400-1"
 #
@@ -87,9 +90,11 @@ set_property supported_families {zynq Production virtex7 Production qvirtex7 Pro
 #
 # Set Core Version
 #
-set_property core_revision 2             [ipx::current_core]
-set_property name          $ip_name      [ipx::current_core]
-set_property display_name  $ip_name      [ipx::current_core]
+set_property version       $ip_version               [ipx::current_core]
+set_property core_revision $ip_core_revision         [ipx::current_core]
+set_property name          $ip_name                  [ipx::current_core]
+set_property display_name  $ip_name                  [ipx::current_core]
+set_property description   "ZynqMP-ACP-AXI Adapter"  [ipx::current_core]
 #
 # Generate files
 #
