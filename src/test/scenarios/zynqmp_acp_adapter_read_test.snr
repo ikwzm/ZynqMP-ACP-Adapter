@@ -1,0 +1,895 @@
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST
+---
+- N :
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.1
+---
+- N :
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.1.1 READ  ADDR=0x000F8015 SIZE=200
+- AXI :
+  - READ : 
+      ADDR : 0x000F8015
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [                         0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,
+              0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,
+              0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F,
+              0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,
+              0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x5B,0x5C,0x5D,0x5E,0x5F,
+              0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,
+              0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F,
+              0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
+              0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F,
+              0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF,
+              0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF,
+              0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,0xC8,0xC9,0xCA,0xCB,0xCC,0xCD,0xCE,0xCF,
+              0xD0,0xD1,0xD2,0xD3,0xD4,0xD5,0xD6,0xD7,0xD8]
+      RESP : OKAY
+- ACP :
+  - READ : 
+      ADDR : 0x000F8010
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F8020
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F8030
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F8040
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,
+              0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x5B,0x5C,0x5D,0x5E,0x5F,
+              0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,
+              0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F8080
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
+              0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F,
+              0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF,
+              0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F80C0
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,0xC8,0xC9,0xCA,0xCB,0xCC,0xCD,0xCE,0xCF]
+      RESP : OKAY
+  - READ : 
+      ADDR : 0x000F80D0
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0xD0,0xD1,0xD2,0xD3,0xD4,0xD5,0xD6,0xD7,0xD8,0xD9,0xDA,0xDB,0xDC,0xDD,0xDE,0xDF]
+      RESP : OKAY
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER_READ TEST.1.2 READ  ADDR=0x00000004 SIZE=48 
+- - AXI
+  - AR:
+    - VALID : 1
+    - ADDR  : 0x00000004
+      SIZE  : 16
+      LEN   : 4
+      ID    : 0
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 0
+    - ADDR  : 0x00000000
+      SIZE  : 16
+      LEN   : 1
+      ID    : 0
+      BURST : INCR
+  - R :
+    - READY : 0
+    - WAIT  : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h0643C3026E32D50FB8A8436B--------
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hB125390070161102814636C6371B6CA5
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hF34EE329E443AAEBE9168EF3FFD9D72A
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h------------------------4263B9E5
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 1
+    - READY : 0
+- - ACP
+  - AR:
+    - READY : 0
+    - READY : 1
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00000000
+        SIZE  : 16
+        LEN   : 4
+        ID    : 0
+        BURST : INCR
+    - READY : 0
+  - R :
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : {AVALID : 1, ON : on}
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'h0643C3026E32D50FB8A8436B00000000
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'hB125390070161102814636C6371B6CA5
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'hF34EE329E443AAEBE9168EF3FFD9D72A
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'h0000000000000000000000004263B9E5
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - DATA  : 0
+      LAST  : 0
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER_READ TEST.1.3 READ  ADDR=0x00000004 SIZE=64 
+- - AXI
+  - AR:
+    - VALID : 1
+    - ADDR  : 0x00000004
+      SIZE  : 16
+      LEN   : 5
+      ID    : 0
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 0
+    - ADDR  : 0x00000000
+      SIZE  : 16
+      LEN   : 1
+      ID    : 0
+      BURST : INCR
+  - R :
+    - READY : 0
+    - WAIT  : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h73004A565F9F8C169746C570--------
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h63C5FFF533720D89089FDEE7ACC24085
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h497009646315F483F5767BFCF205596F
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hB8E895D7B97B4A2EB9300A22B036A916
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 0
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h------------------------ECCA940A
+        RESP  : OKAY
+        ID    : 0
+        LAST  : 1
+    - READY : 0
+- - ACP
+  - AR:
+    - READY : 0
+    - READY : 1
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00000000
+        SIZE  : 16
+        LEN   : 4
+        ID    : 0
+        BURST : INCR
+    - READY : 0
+  - R :
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : {AVALID : 1, ON : on}
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'h73004A565F9F8C169746C57000000000
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'h63C5FFF533720D89089FDEE7ACC24085
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'h497009646315F483F5767BFCF205596F
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - WAIT  : 0
+    - VALID : 1
+      DATA  : 128'hB8E895D7B97B4A2EB9300A22B036A916
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - DATA  : 0
+      LAST  : 0
+- - ACP
+  - AR:
+    - READY : 0
+    - READY : 1
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00000040
+        SIZE  : 16
+        LEN   : 1
+        ID    : 0
+        BURST : INCR
+    - READY : 0
+  - R :
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : 8
+    - VALID : 1
+      DATA  : 128'h000000000000000000000000ECCA940A
+      RESP  : OKAY
+      ID    : 0
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - DATA  : 0
+      LAST  : 0
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER_READ TEST.1.4  READ ID=1 -> READ  ID=1
+- - AXI
+  - AR:
+    - VALID : 1
+    - ADDR  : 0x00F80000
+      SIZE  : 16
+      LEN   : 8
+      ID    : 1
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 1
+    - ADDR  : 0x00F80080
+      SIZE  : 16
+      LEN   : 8
+      ID    : 1
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 0
+    - ADDR  : 0x00000000
+      SIZE  : 16
+      LEN   : 1
+      ID    : 0
+      BURST : INCR
+  - R :
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h0F0E0D0C0B0A09080706050403020100
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h1F1E1D1C1B1A19181716151413121110
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h2F2E2D2C2B2A29282726252423222120
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h3F3E3D3C3B3A39383736353433323130
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h4F4E4D4C4B4A49484746454443424140
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h5F5E5D5C5B5A59585756555453525150
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h6F6E6D6C6B6A69686766656463626160
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h7F7E7D7C7B7A79787776757473727170
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h8F8E8D8C8B8A89888786858483828180
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h9F9E9D9C9B9A99989796959493929190
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hAFAEADACABAAA9A8A7A6A5A4A3A2A1A0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hBFBEBDBCBBBAB9B8B7B6B5B4B3B2B1B0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hCFCECDCCCBCAC9C8C7C6C5C4C3C2C1C0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hDFDEDDDCDBDAD9D8D7D6D5D4D3D2D1D0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hEFEEEDECEBEAE9E8E7E6E5E4E3E2E1E0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hFFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 1
+    - READY : 0
+- - ACP
+  - AR:
+    - READY : 0
+    - READY : 1
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80000
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80040
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80080
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F800C0
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - READY : 0
+  - R :
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : {AVALID : 1, AREADY : 1}  # WAIT 1st AR (ID=1)
+    - WAIT  : {AVALID : 1, AREADY : 1}  # WAIT 2nd AR (ID=1)
+    - WAIT  : 2
+    - VALID : 1
+      DATA  : 128'h0F0E0D0C0B0A09080706050403020100
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h1F1E1D1C1B1A19181716151413121110
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h2F2E2D2C2B2A29282726252423222120
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h3F3E3D3C3B3A39383736353433323130
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h4F4E4D4C4B4A49484746454443424140
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h5F5E5D5C5B5A59585756555453525150
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h6F6E6D6C6B6A69686766656463626160
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h7F7E7D7C7B7A79787776757473727170
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h8F8E8D8C8B8A89888786858483828180
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h9F9E9D9C9B9A99989796959493929190
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hAFAEADACABAAA9A8A7A6A5A4A3A2A1A0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hBFBEBDBCBBBAB9B8B7B6B5B4B3B2B1B0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hCFCECDCCCBCAC9C8C7C6C5C4C3C2C1C0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hDFDEDDDCDBDAD9D8D7D6D5D4D3D2D1D0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hEFEEEDECEBEAE9E8E7E6E5E4E3E2E1E0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hFFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - DATA  : 0
+      LAST  : 0
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER_READ TEST.1.5  READ ID=1 -> READ  ID=2
+- - AXI
+  - AR:
+    - VALID : 1
+    - ADDR  : 0x00F80000
+      SIZE  : 16
+      LEN   : 8
+      ID    : 1
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 1
+    - ADDR  : 0x00F80080
+      SIZE  : 16
+      LEN   : 8
+      ID    : 2
+      BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - VALID : 0
+    - ADDR  : 0x00000000
+      SIZE  : 16
+      LEN   : 1
+      ID    : 0
+      BURST : INCR
+  - R :
+    - READY : 0
+    - WAIT  : 0
+    - READY : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h0F0E0D0C0B0A09080706050403020100
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h1F1E1D1C1B1A19181716151413121110
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h2F2E2D2C2B2A29282726252423222120
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h3F3E3D3C3B3A39383736353433323130
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h4F4E4D4C4B4A49484746454443424140
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h5F5E5D5C5B5A59585756555453525150
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h6F6E6D6C6B6A69686766656463626160
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h7F7E7D7C7B7A79787776757473727170
+        RESP  : OKAY
+        ID    : 1
+        LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h8F8E8D8C8B8A89888786858483828180
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'h9F9E9D9C9B9A99989796959493929190
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hAFAEADACABAAA9A8A7A6A5A4A3A2A1A0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hBFBEBDBCBBBAB9B8B7B6B5B4B3B2B1B0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hCFCECDCCCBCAC9C8C7C6C5C4C3C2C1C0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hDFDEDDDCDBDAD9D8D7D6D5D4D3D2D1D0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hEFEEEDECEBEAE9E8E7E6E5E4E3E2E1E0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - CHECK :
+        DATA  : 128'hFFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0
+        RESP  : OKAY
+        ID    : 2
+        LAST  : 1
+    - READY : 0
+- - ACP
+  - AR:
+    - READY : 0
+    - READY : 1
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80000
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80040
+        SIZE  : 16
+        LEN   : 4
+        ID    : 1
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F80080
+        SIZE  : 16
+        LEN   : 4
+        ID    : 2
+        BURST : INCR
+    - WAIT  : {AVALID : 1, AREADY : 1}
+    - CHECK : 
+        ADDR  : 0x00F800C0
+        SIZE  : 16
+        LEN   : 4
+        ID    : 2
+        BURST : INCR
+    - READY : 0
+  - R :
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : {AVALID : 1, AREADY : 1}  # WAIT 1st AR (ID=1)
+    - WAIT  : 8
+    - VALID : 1
+      DATA  : 128'h0F0E0D0C0B0A09080706050403020100
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h1F1E1D1C1B1A19181716151413121110
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h2F2E2D2C2B2A29282726252423222120
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h3F3E3D3C3B3A39383736353433323130
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h4F4E4D4C4B4A49484746454443424140
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h5F5E5D5C5B5A59585756555453525150
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h6F6E6D6C6B6A69686766656463626160
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h7F7E7D7C7B7A79787776757473727170
+      RESP  : OKAY
+      ID    : 1
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+      DATA  : 0
+      LAST  : 0
+    - WAIT  : {AVALID : 1, AREADY : 1}  # WAIT 2nd AR (ID=2)
+    - WAIT  : 8
+    - VALID : 1
+      DATA  : 128'h8F8E8D8C8B8A89888786858483828180
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'h9F9E9D9C9B9A99989796959493929190
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hAFAEADACABAAA9A8A7A6A5A4A3A2A1A0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hBFBEBDBCBBBAB9B8B7B6B5B4B3B2B1B0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hCFCECDCCCBCAC9C8C7C6C5C4C3C2C1C0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hDFDEDDDCDBDAD9D8D7D6D5D4D3D2D1D0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hEFEEEDECEBEAE9E8E7E6E5E4E3E2E1E0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 0
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 1
+      DATA  : 128'hFFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0
+      RESP  : OKAY
+      ID    : 2
+      LAST  : 1
+    - WAIT  : {RVALID : 1, RREADY : 1}
+    - VALID : 0
+    - DATA  : 0
+      LAST  : 0
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.1 DONE
+---
+- N :
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.2
+---
+- N :
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.2.1 WRITE ADDR=0x000F8000 SIZE=4 (DECERR)
+---
+- AXI :
+  - WRITE : 
+      ADDR : 0x000F8000
+      SIZE : 16
+      BURST: INCR
+      ID   : 1
+      DATA : [0x00,0x01,0x02,0x03]
+      RESP : DECERR
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST.2 DONE
+---
+- N : 
+  - SAY : ZYNQMP_ACP_ADAPTER READ TEST DONE
+---

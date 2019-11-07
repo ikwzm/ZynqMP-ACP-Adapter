@@ -1,0 +1,15 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  zynqmp_acp_adapter_library
+    Format   :  "add_vhdl_file sources_1 #{library_name} #{file_name}"
+    PathList :  
+        - "../../../src/main/vhdl/"
+        - "../../../PipeWork/src/components/reducer.vhd"
+        - "../../../PipeWork/src/components/queue_register.vhd"
+        - "../../../PipeWork/src/components/queue_receiver.vhd"
+        - "../../../PipeWork/src/components/sdpram.vhd"
+        - "../../../PipeWork/src/components/sdpram_xilinx_ultrascale_auto_select.vhd"
+    Top      :  ["ZYNQMP_ACP_ADAPTER"]

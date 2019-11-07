@@ -1,0 +1,16 @@
+
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  dummy_plug
+    Format   :  "add_vhdl_file sim_1     #{library_name} #{file_name}"
+    Exclude  :  ["../../../Dummy_Plug/src/main/vhdl/core/sync_alt.vhd"]
+    PathList :  ["../../../Dummy_Plug/src/main/vhdl/"]
+
+- Library:
+    Name     :  work
+    Format   :  "add_vhdl_file sim_1     #{library_name} #{file_name}"
+    PathList :  
+        - "../../../src/test/vhdl/zynqmp_acp_adapter_test_bench.vhd"
+    Top      :  ["ZYNQMP_ACP_ADAPTER_WRITE_TEST"]
