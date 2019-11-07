@@ -184,22 +184,17 @@ begin
                 case curr_state is
                     when IDLE_STATE =>
                         if (AXI_ARVALID = '1') then
-                            if (resp_queue_ready) then
-                                curr_state <= ADDR_STATE;
-                            else
-                                curr_state <= WAIT_STATE;
-                            end if;
-                        else
-                                curr_state <= IDLE_STATE;
-                        end if;
-                        if (AXI_ARVALID = '1') then
-                            xfer_id         <= AXI_ARID;
-                            page_num        <= unsigned(AXI_ARADDR(page_num'range));
+                            curr_state <= WAIT_STATE;
+                            xfer_id    <= AXI_ARID;
+                            page_num   <= unsigned(AXI_ARADDR(page_num'range));
                             next_word_pos   := unsigned(AXI_ARADDR(word_pos'range));
                             next_remain_len := resize(unsigned(AXI_ARLEN),remain_len'length) + 1;
+                        else
+                            curr_state <= IDLE_STATE;
                         end if;
                     when WAIT_STATE =>
-                        if (resp_queue_ready) then
+                        if (resp_queue_ready = TRUE ) and
+                           (resp_another_id  = FALSE) then
                             curr_state <= ADDR_STATE;
                         else
                             curr_state <= WAIT_STATE;
