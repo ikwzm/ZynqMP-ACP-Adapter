@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.1.0
---!     @date    2019/11/1
+--!     @version 0.4.0
+--!     @date    2019/11/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --

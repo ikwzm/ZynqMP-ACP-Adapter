@@ -3,7 +3,7 @@
   <spirit:vendor>ikwzm</spirit:vendor>
   <spirit:library>PIPEORK</spirit:library>
   <spirit:name>ZYNQMP_ACP_ADAPTER</spirit:name>
-  <spirit:version>0.3</spirit:version>
+  <spirit:version>0.4</spirit:version>
   <spirit:busInterfaces>
     <spirit:busInterface>
       <spirit:name>ACP</spirit:name>
@@ -731,7 +731,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>fcdc2653</spirit:value>
+            <spirit:value>1727a94e</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -747,7 +747,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>fcdc2653</spirit:value>
+            <spirit:value>1727a94e</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -761,7 +761,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>viewChecksum</spirit:name>
-            <spirit:value>d4bad5ef</spirit:value>
+            <spirit:value>d8335085</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -2162,24 +2162,39 @@
         <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.AXI_ID_WIDTH">6</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>READ_RESP_QUEUE</spirit:name>
-        <spirit:displayName>Read Resp Queue</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.READ_RESP_QUEUE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
+        <spirit:name>RRESP_QUEUE_SIZE</spirit:name>
+        <spirit:displayName>Rresp Queue Size</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RRESP_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="8" spirit:rangeType="long">2</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>WRITE_DATA_QUEUE</spirit:name>
-        <spirit:displayName>Write Data Queue</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WRITE_DATA_QUEUE" spirit:minimum="4" spirit:maximum="32" spirit:rangeType="long">16</spirit:value>
+        <spirit:name>RDATA_QUEUE_SIZE</spirit:name>
+        <spirit:displayName>Rdata Queue Size</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RDATA_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>WRITE_MAX_LENGTH</spirit:name>
-        <spirit:displayName>Write Max Length</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WRITE_MAX_LENGTH" spirit:minimum="4" spirit:maximum="4" spirit:rangeType="long">4</spirit:value>
+        <spirit:name>RDATA_INTAKE_REGS</spirit:name>
+        <spirit:displayName>Rdata Intake Regs</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.RDATA_INTAKE_REGS" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
       <spirit:modelParameter spirit:dataType="integer">
-        <spirit:name>WRITE_RESP_QUEUE</spirit:name>
-        <spirit:displayName>Write Resp Queue</spirit:displayName>
-        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WRITE_RESP_QUEUE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
+        <spirit:name>WRESP_QUEUE_SIZE</spirit:name>
+        <spirit:displayName>Wresp Queue Size</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WRESP_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="8" spirit:rangeType="long">2</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>WDATA_QUEUE_SIZE</spirit:name>
+        <spirit:displayName>Wdata Queue Size</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WDATA_QUEUE_SIZE" spirit:minimum="4" spirit:maximum="32" spirit:rangeType="long">16</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>WDATA_OUTLET_REGS</spirit:name>
+        <spirit:displayName>Wdata Outlet Regs</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WDATA_OUTLET_REGS" spirit:minimum="0" spirit:maximum="8" spirit:rangeType="long">5</spirit:value>
+      </spirit:modelParameter>
+      <spirit:modelParameter spirit:dataType="integer">
+        <spirit:name>WDATA_INTAKE_REGS</spirit:name>
+        <spirit:displayName>Wdata Intake Regs</spirit:displayName>
+        <spirit:value spirit:format="long" spirit:resolve="generated" spirit:id="MODELPARAM_VALUE.WDATA_INTAKE_REGS" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
       </spirit:modelParameter>
     </spirit:modelParameters>
   </spirit:model>
@@ -2242,12 +2257,6 @@
         <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_read_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
         <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_response_queue.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
@@ -2256,75 +2265,8 @@
       <spirit:file>
         <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_write_adapter.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
+        <spirit:userFileType>CHECKSUM_83fef93f</spirit:userFileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_write_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_7dea30f0</spirit:userFileType>
-        <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/components.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/queue_receiver.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/queue_register.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/reducer.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/sdpram.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/sdpram_xilinx_ultrascale_auto_select.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_read_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_read_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_response_queue.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_write_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_write_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_74b604d2</spirit:userFileType>
         <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
       </spirit:file>
     </spirit:fileSet>
@@ -2379,12 +2321,6 @@
         <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
       </spirit:file>
       <spirit:file>
-        <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_read_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
         <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_response_queue.vhd</spirit:name>
         <spirit:fileType>vhdlSource</spirit:fileType>
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
@@ -2396,79 +2332,13 @@
         <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
         <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
       </spirit:file>
-      <spirit:file>
-        <spirit:name>src/ZYNQMP_ACP_ADAPTER_LIBRARY/zynqmp_acp_write_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:userFileType>IMPORTED_FILE</spirit:userFileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/components.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/queue_receiver.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/queue_register.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/reducer.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/sdpram.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/components/sdpram_xilinx_ultrascale_auto_select.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_read_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_read_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_response_queue.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_write_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_write_decerr.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
-      <spirit:file>
-        <spirit:name>../work/zynqmp_acp_adapter.srcs/sources_1/imports/vhdl/zynqmp_acp_adapter.vhd</spirit:name>
-        <spirit:fileType>vhdlSource</spirit:fileType>
-        <spirit:logicalName>ZYNQMP_ACP_ADAPTER_LIBRARY</spirit:logicalName>
-      </spirit:file>
     </spirit:fileSet>
     <spirit:fileSet>
       <spirit:name>xilinx_xpgui_view_fileset</spirit:name>
       <spirit:file>
-        <spirit:name>xgui/ZYNQMP_ACP_ADAPTER_v0_3.tcl</spirit:name>
+        <spirit:name>xgui/ZYNQMP_ACP_ADAPTER_v0_4.tcl</spirit:name>
         <spirit:fileType>tclSource</spirit:fileType>
-        <spirit:userFileType>CHECKSUM_d4bad5ef</spirit:userFileType>
+        <spirit:userFileType>CHECKSUM_d8335085</spirit:userFileType>
         <spirit:userFileType>XGUI_VERSION_2</spirit:userFileType>
       </spirit:file>
     </spirit:fileSet>
@@ -2487,38 +2357,53 @@
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>AXI_ADDR_WIDTH</spirit:name>
-      <spirit:displayName>Axi Addr Width</spirit:displayName>
+      <spirit:displayName>Axi Addr Width (bit)</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.AXI_ADDR_WIDTH">64</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>AXI_DATA_WIDTH</spirit:name>
-      <spirit:displayName>Axi Data Width</spirit:displayName>
+      <spirit:displayName>Axi Data Width (bit)</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.AXI_DATA_WIDTH" spirit:minimum="128" spirit:maximum="128" spirit:rangeType="long">128</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>AXI_ID_WIDTH</spirit:name>
-      <spirit:displayName>Axi Id Width</spirit:displayName>
+      <spirit:displayName>Axi Id Width (bit)</spirit:displayName>
       <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.AXI_ID_WIDTH">6</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
-      <spirit:name>READ_RESP_QUEUE</spirit:name>
-      <spirit:displayName>Read Resp Queue</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.READ_RESP_QUEUE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
+      <spirit:name>RRESP_QUEUE_SIZE</spirit:name>
+      <spirit:displayName>Read Response Queue Size</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.RRESP_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="8" spirit:rangeType="long">2</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
-      <spirit:name>WRITE_DATA_QUEUE</spirit:name>
-      <spirit:displayName>Write Data Queue</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WRITE_DATA_QUEUE" spirit:minimum="4" spirit:maximum="32" spirit:rangeType="long">16</spirit:value>
+      <spirit:name>RDATA_QUEUE_SIZE</spirit:name>
+      <spirit:displayName>Read Data Queue Size</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.RDATA_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
-      <spirit:name>WRITE_MAX_LENGTH</spirit:name>
-      <spirit:displayName>Write Max Length</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WRITE_MAX_LENGTH" spirit:minimum="4" spirit:maximum="4" spirit:rangeType="long">4</spirit:value>
+      <spirit:name>RDATA_INTAKE_REGS</spirit:name>
+      <spirit:displayName>Read Data Intake Register</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.RDATA_INTAKE_REGS" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
-      <spirit:name>WRITE_RESP_QUEUE</spirit:name>
-      <spirit:displayName>Write Resp Queue</spirit:displayName>
-      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WRITE_RESP_QUEUE" spirit:minimum="1" spirit:maximum="4" spirit:rangeType="long">2</spirit:value>
+      <spirit:name>WRESP_QUEUE_SIZE</spirit:name>
+      <spirit:displayName>Write Response Queue Size</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WRESP_QUEUE_SIZE" spirit:minimum="1" spirit:maximum="8" spirit:rangeType="long">2</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>WDATA_QUEUE_SIZE</spirit:name>
+      <spirit:displayName>Write Data Queue Size</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WDATA_QUEUE_SIZE" spirit:minimum="4" spirit:maximum="32" spirit:rangeType="long">16</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>WDATA_OUTLET_REGS</spirit:name>
+      <spirit:displayName>Write Data Outlet Queue Size</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WDATA_OUTLET_REGS" spirit:minimum="0" spirit:maximum="8" spirit:rangeType="long">5</spirit:value>
+    </spirit:parameter>
+    <spirit:parameter>
+      <spirit:name>WDATA_INTAKE_REGS</spirit:name>
+      <spirit:displayName>Write Data Intake Register</spirit:displayName>
+      <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="PARAM_VALUE.WDATA_INTAKE_REGS" spirit:minimum="0" spirit:maximum="1" spirit:rangeType="long">0</spirit:value>
     </spirit:parameter>
     <spirit:parameter>
       <spirit:name>Component_Name</spirit:name>
@@ -2548,43 +2433,37 @@
       </xilinx:taxonomies>
       <xilinx:displayName>ZYNQMP_ACP_ADAPTER</xilinx:displayName>
       <xilinx:definitionSource>package_project</xilinx:definitionSource>
-      <xilinx:coreRevision>4</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2019-11-07T03:31:00Z</xilinx:coreCreationDateTime>
+      <xilinx:coreRevision>2</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2019-11-10T05:27:18Z</xilinx:coreCreationDateTime>
       <xilinx:tags>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@4176244_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2924b974_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@5fa378f4_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@6549f126_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@4538d2ac_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@1bbb8a3b_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2d74e2db_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@350dbe79_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3ac18aff_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2de983cd_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@56182de5_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@36283e6d_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3c884038_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@425b0e8f_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@cd9d57a_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@41f8548e_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@26bf882e_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@4dd7fdb0_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@2420e4a8_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@6ff093a1_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@62c7e481_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@6f590a34_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
-        <xilinx:tag xilinx:name="ui.data.coregen.dd@3d734bbb_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.3</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@3d1287b1_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@52e4dded_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@6f7728c7_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@702fb37e_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@482634c8_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@57afa54a_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@289092b7_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@45aac6f_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@12f8e3d1_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@840ff75_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@420daf88_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@75ee991_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@2a6224a8_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@39e96b7e_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@49da26a4_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@18dfda1f_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
+        <xilinx:tag xilinx:name="ui.data.coregen.dd@395d0b2b_ARCHIVE_LOCATION">d:/ichiro/work/ZynqMP-ACP-Adapter/ip/zynqmp_acp_adapter_0.4</xilinx:tag>
       </xilinx:tags>
     </xilinx:coreExtensions>
     <xilinx:packagingInfo>
-      <xilinx:xilinxVersion>2019.1</xilinx:xilinxVersion>
+      <xilinx:xilinxVersion>2018.3</xilinx:xilinxVersion>
       <xilinx:checksum xilinx:scope="busInterfaces" xilinx:value="93ec409b"/>
       <xilinx:checksum xilinx:scope="addressSpaces" xilinx:value="992a354e"/>
       <xilinx:checksum xilinx:scope="memoryMaps" xilinx:value="beab13a8"/>
-      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="fc966cd5"/>
+      <xilinx:checksum xilinx:scope="fileGroups" xilinx:value="2bf8dcf4"/>
       <xilinx:checksum xilinx:scope="ports" xilinx:value="10a6ab7f"/>
-      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="fb562d9d"/>
-      <xilinx:checksum xilinx:scope="parameters" xilinx:value="abc2c47f"/>
+      <xilinx:checksum xilinx:scope="hdlParameters" xilinx:value="eda30677"/>
+      <xilinx:checksum xilinx:scope="parameters" xilinx:value="4af2f052"/>
     </xilinx:packagingInfo>
   </spirit:vendorExtensions>
 </spirit:component>

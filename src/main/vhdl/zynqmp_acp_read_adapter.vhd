@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.3.0
---!     @date    2019/11/6
+--!     @version 0.4.0
+--!     @date    2019/11/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -50,10 +50,14 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
-                              integer range 1 to 4  := 2;
-        DATA_LATENCY        : --! @brief RDATA LATENCY :
-                              integer := 2
+        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+                              integer range 4 to 4  := 4;
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        DATA_QUEUE_SIZE     : --! @brief DATA QUEUE SIZE :
+                              integer range 0 to 4  := 2;
+        DATA_INTAKE_REGS    : --! @brief DATA INTAKE REGSITER :
+                              integer range 0 to 1  := 0
     );
     port(
     -------------------------------------------------------------------------------
@@ -134,9 +138,9 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     signal    curr_state        :  STATE_TYPE;
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_last         :  boolean;
-    signal    xfer_len          :  unsigned(2 downto 0);
-    signal    remain_len        :  unsigned(8 downto 0);
-    signal    burst_len         :  std_logic_vector( 7 downto 0);
+    signal    xfer_len          :  unsigned( 2 downto 0);
+    signal    remain_len        :  unsigned( 8 downto 0);
+    signal    burst_len         :  unsigned( 7 downto 0);
     constant  byte_pos          :  unsigned( 3 downto 0) := (others => '0');
     signal    word_pos          :  unsigned(11 downto 4);
     signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
@@ -214,12 +218,12 @@ begin
                     when others =>
                             curr_state <= IDLE_STATE;
                 end case;
-                if (next_word_pos(5 downto 4) = "00" and next_remain_len >= 4) then
-                    xfer_len  <= to_unsigned(4, xfer_len'length);
-                    burst_len <= "00000011";
+                if (next_word_pos(5 downto 4) = "00" and next_remain_len >= MAX_BURST_LENGTH) then
+                    xfer_len  <= to_unsigned(MAX_BURST_LENGTH  , xfer_len'length );
+                    burst_len <= to_unsigned(MAX_BURST_LENGTH-1, burst_len'length);
                 else
-                    xfer_len  <= to_unsigned(1, xfer_len'length);
-                    burst_len <= "00000000";
+                    xfer_len  <= to_unsigned(1  , xfer_len'length );
+                    burst_len <= to_unsigned(1-1, burst_len'length);
                 end if;
                 word_pos   <= next_word_pos;
                 remain_len <= next_remain_len;
@@ -229,7 +233,7 @@ begin
     AXI_ARREADY <= '1' when (curr_state = IDLE_STATE) else '0';
     ACP_ARVALID <= '1' when (curr_state = ADDR_STATE) else '0';
     ACP_ARADDR  <= std_logic_vector(page_num) & std_logic_vector(word_pos) & std_logic_vector(byte_pos);
-    ACP_ARLEN   <= burst_len;
+    ACP_ARLEN   <= std_logic_vector(burst_len);
     ACP_ARID    <= xfer_id;
     xfer_last   <= (remain_len <= xfer_len);
     resp_queue_valid  <= (curr_state = ADDR_STATE and ACP_ARREADY = '1');
@@ -290,9 +294,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DQ: block
-        constant  IPORT_QUEUE       :  boolean := (DATA_LATENCY >= 2);
-        constant  OPORT_QUEUE       :  boolean := (DATA_LATENCY >= 1);
+    DATA: block
         constant  RDATA_LO          :  integer := 0;
         constant  RDATA_HI          :  integer := RDATA_LO  + AXI_DATA_WIDTH - 1;
         constant  RRESP_LO          :  integer := RDATA_HI  + 1;
@@ -330,7 +332,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        IPORT: if (IPORT_QUEUE = TRUE) generate
+        INTAKE: if (DATA_INTAKE_REGS /= 0) generate
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
         begin 
@@ -363,7 +365,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        IPORT_BUF: if (IPORT_QUEUE = FALSE) generate
+        INTAKE_NO_REGS: if (DATA_INTAKE_REGS = 0) generate
             i_data  <= ACP_RDATA;
             i_resp  <= ACP_RRESP;
             i_id    <= ACP_RID;
@@ -374,26 +376,26 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        OPORT: if (OPORT_QUEUE = TRUE) generate
+        OUTLET: block
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_valid   :  std_logic_vector(2 downto 0);
         begin 
-            QUEUE: QUEUE_REGISTER                -- 
-                generic map (                    -- 
-                    QUEUE_SIZE  => 2           , -- 
-                    DATA_BITS   => WORD_BITS     -- 
-                )                                -- 
-                port map (                       -- 
-                    CLK         => ACLK        , -- In  :
-                    RST         => reset       , -- In  :
-                    CLR         => clear       , -- In  :
-                    I_DATA      => i_word      , -- In  :
-                    I_VAL       => o_valid     , -- In  :
-                    I_RDY       => o_ready     , -- Out :
-                    Q_DATA      => q_word      , -- Out :
-                    Q_VAL       => q_valid     , -- Out :
-                    Q_RDY       => AXI_RREADY    -- In  :
+            QUEUE: QUEUE_REGISTER                    -- 
+                generic map (                        -- 
+                    QUEUE_SIZE  => DATA_QUEUE_SIZE , -- 
+                    DATA_BITS   => WORD_BITS         -- 
+                )                                    -- 
+                port map (                           -- 
+                    CLK         => ACLK            , -- In  :
+                    RST         => reset           , -- In  :
+                    CLR         => clear           , -- In  :
+                    I_DATA      => i_word          , -- In  :
+                    I_VAL       => o_valid         , -- In  :
+                    I_RDY       => o_ready         , -- Out :
+                    Q_DATA      => q_word          , -- Out :
+                    Q_VAL       => q_valid         , -- Out :
+                    Q_RDY       => AXI_RREADY        -- In  :
                 );
             i_word(RDATA_HI downto RDATA_LO) <= o_data;
             i_word(RRESP_HI downto RRESP_LO) <= o_resp;
@@ -404,17 +406,6 @@ begin
             AXI_RRESP  <= q_word(RRESP_HI downto RRESP_LO);
             AXI_RID    <= q_word(RID_HI   downto RID_LO  );
             AXI_RLAST  <= q_word(RLAST_POS               );
-        end generate;
-        ---------------------------------------------------------------------------
-        --
-        ---------------------------------------------------------------------------
-        OPORT_BUF: if (OPORT_QUEUE = FALSE) generate
-            AXI_RDATA  <= o_data;
-            AXI_RRESP  <= o_resp;
-            AXI_RID    <= o_id;
-            AXI_RLAST  <= o_last;
-            AXI_RVALID <= o_valid;
-            o_ready    <= AXI_RREADY;
-        end generate;
+        end block;
     end block;
 end RTL;

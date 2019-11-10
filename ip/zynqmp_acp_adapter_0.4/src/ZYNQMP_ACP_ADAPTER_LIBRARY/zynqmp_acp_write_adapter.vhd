@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.3.0
---!     @date    2019/11/6
+--!     @version 0.4.0
+--!     @date    2019/11/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -50,12 +50,16 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
-                              integer range 4 to 32 := 16;
-        WRITE_MAX_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
-        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
-                              integer range 1 to 4  := 2
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        DATA_QUEUE_SIZE     : --! @brief WRITE DATA QUEUE SIZE :
+                              integer range 4 to 32 := 16;
+        DATA_OUTLET_REGS    : --! @brief DATA OUTLET REGSITER :
+                              integer range 0 to 8  := 0;
+        DATA_INTAKE_REGS    : --! @brief DATA INTAKE REGSITER :
+                              integer range 0 to 1  := 0
     );
     port(
     -------------------------------------------------------------------------------
@@ -151,7 +155,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
     signal    xfer_start        :  boolean;
     signal    xfer_last         :  boolean;
-    signal    remain_len        :  integer range 0 to WRITE_MAX_LENGTH-1;
+    signal    remain_len        :  integer range 0 to MAX_BURST_LENGTH-1;
     signal    byte_pos          :  unsigned( 3 downto 0);
     signal    word_pos          :  unsigned(11 downto 4);
     signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
@@ -174,7 +178,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
               LAST              :  boolean;
     end record;
     type      WQ_INFO_VECTOR    is array(integer range <>) of WQ_INFO_TYPE;
-    signal    wq_info           :  WQ_INFO_VECTOR(0 to WRITE_MAX_LENGTH-1);
+    signal    wq_info           :  WQ_INFO_VECTOR(0 to MAX_BURST_LENGTH-1);
     signal    wq_data           :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
     signal    wq_strb           :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
     signal    wq_valid          :  std_logic;
@@ -244,8 +248,8 @@ begin
                         if (xfer_start) then
                             byte_pos   <= (others => '0');
                             if    (wq_full_burst) then
-                                remain_len <= WRITE_MAX_LENGTH-1;
-                                word_pos   <= word_pos + WRITE_MAX_LENGTH;
+                                remain_len <= MAX_BURST_LENGTH-1;
+                                word_pos   <= word_pos + MAX_BURST_LENGTH;
                             else
                                 remain_len <= 1;
                                 word_pos   <= word_pos + 1;
@@ -330,7 +334,7 @@ begin
     wq_ready   <= '1' when (xfer_start) or
                            (curr_state = DATA_STATE and wo_ready = '1') else '0';
     burst_len  <= (others => '0') when (wq_none_burst) else 
-                  to_unsigned(WRITE_MAX_LENGTH-1, burst_len'length);
+                  to_unsigned(MAX_BURST_LENGTH-1, burst_len'length);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -341,14 +345,14 @@ begin
         if (word_pos(5 downto 4) = "00" and byte_pos = "0000") then
             full_burst := TRUE;
             none_burst := FALSE;
-            for i in 0 to WRITE_MAX_LENGTH-1 loop
+            for i in 0 to MAX_BURST_LENGTH-1 loop
                 if (wq_info(i).VALID = FALSE or  wq_info(i).STRB_ALL_1 = FALSE) then
                     full_burst := full_burst and FALSE;
                 end if;
                 if (wq_info(i).VALID = TRUE  and wq_info(i).STRB_ALL_1 = FALSE) then
                     none_burst := none_burst or  TRUE;
                 end if;
-                if (i < WRITE_MAX_LENGTH-1) and
+                if (i < MAX_BURST_LENGTH-1) and
                    (wq_info(i).VALID = TRUE  and wq_info(i).LAST = TRUE) then
                     none_burst := none_burst or  TRUE;
                 end if;
@@ -360,7 +364,7 @@ begin
         wq_last_word  <= wq_info(0).LAST;
         wq_full_burst <= full_burst;
         wq_none_burst <= none_burst;
-        xfer_last     <= (full_burst and wq_info(WRITE_MAX_LENGTH-1).LAST) or
+        xfer_last     <= (full_burst and wq_info(MAX_BURST_LENGTH-1).LAST) or
                          (none_burst and wq_info(0                 ).LAST);
         wq_next_valid <= wq_info(1).VALID;
     end process;
@@ -414,9 +418,7 @@ begin
     -------------------------------------------------------------------------------
     -- Write Data Block
     -------------------------------------------------------------------------------
-    W: block
-        constant  IPORT_QUEUE   :  boolean := TRUE;
-        constant  OPORT_QUEUE   :  boolean := TRUE;
+    DATA: block
         constant  WDATA_LO      :  integer := 0;
         constant  WDATA_HI      :  integer := WDATA_LO  + AXI_DATA_WIDTH   - 1;
         constant  WSTRB_LO      :  integer := WDATA_HI  + 1;
@@ -432,7 +434,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        IPORT: if (IPORT_QUEUE = TRUE) generate
+        INTAKE: if (DATA_INTAKE_REGS /= 0) generate
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
         begin 
@@ -463,7 +465,7 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        IPORT_BUF: if (IPORT_QUEUE = FALSE) generate
+        INTAKE_NO_REGS: if (DATA_INTAKE_REGS = 0) generate
             ip_data  <= AXI_WDATA;
             ip_strb  <= AXI_WSTRB;
             ip_last  <= AXI_WLAST;
@@ -475,9 +477,9 @@ begin
         ---------------------------------------------------------------------------
         INFO: block
             signal    i_word   :  std_logic_vector(1 downto 0);
-            constant  q_full   :  std_logic_vector(  WRITE_MAX_LENGTH-1 downto 0) := (others => '1');
-            signal    q_word   :  std_logic_vector(2*WRITE_MAX_LENGTH-1 downto 0);
-            signal    q_valid  :  std_logic_vector(  WRITE_MAX_LENGTH   downto 0);
+            constant  q_full   :  std_logic_vector(  MAX_BURST_LENGTH-1 downto 0) := (others => '1');
+            signal    q_word   :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
+            signal    q_valid  :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
             constant  q_shift  :  std_logic_vector(0 downto 0) := "1";
         begin
             -----------------------------------------------------------------------
@@ -488,10 +490,10 @@ begin
                    WORD_BITS   => 2               , -- 
                    STRB_BITS   => 1               , -- 
                    I_WIDTH     => 1               , -- 
-                   O_WIDTH     => WRITE_MAX_LENGTH, -- 
-                   QUEUE_SIZE  => WRITE_DATA_QUEUE, -- 
+                   O_WIDTH     => MAX_BURST_LENGTH, -- 
+                   QUEUE_SIZE  => DATA_QUEUE_SIZE , -- 
                    VALID_MIN   => 0               , -- 
-                   VALID_MAX   => WRITE_MAX_LENGTH, -- 
+                   VALID_MAX   => MAX_BURST_LENGTH, -- 
                    O_VAL_SIZE  => 1               , --
                    O_SHIFT_MIN => q_shift'low     , --
                    O_SHIFT_MAX => q_shift'high    , --
@@ -533,11 +535,23 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        BUF: block
-            signal    we        :  std_logic_vector(0 downto 0);
-            signal    waddr     :  std_logic_vector(3 downto 0);
-            signal    raddr     :  std_logic_vector(3 downto 0);
-            signal    raddr_q   :  std_logic_vector(3 downto 0);
+        QUEUE: block
+            function  CALC_WIDTH(SIZE: integer) return integer is
+                variable width : integer;
+            begin
+                width := 1;
+                while(2**width < SIZE) loop
+                    width := width + 1;
+                end loop;
+                return width;
+            end function;
+            constant  ADDR_WIDTH    :  integer := CALC_WIDTH(DATA_QUEUE_SIZE );
+            constant  DATA_WIDTH    :  integer := CALC_WIDTH(AXI_DATA_WIDTH  );
+            constant  STRB_WIDTH    :  integer := CALC_WIDTH(AXI_DATA_WIDTH/8);
+            signal    we            :  std_logic_vector(0 downto 0);
+            signal    waddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);
+            signal    raddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);
+            signal    raddr_q       :  std_logic_vector(ADDR_WIDTH-1 downto 0);
         begin
             we    <= (others => '1') when (ip_valid = '1' and ip_ready = '1') else (others => '0');
             raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wq_valid = '1' and wq_ready = '1') else raddr_q;
@@ -557,64 +571,64 @@ begin
                     end if;
                 end if;
             end process;
-            DATA: SDPRAM                 -- 
-                generic map(             -- 
-                    DEPTH  =>  11      , -- 2**11 = 2048bit(16*128bit)
-                    RWIDTH =>  7       , -- 2**7  = 128bit
-                    WWIDTH =>  7       , -- 2**7  = 128bit
-                    WEBIT  =>  0       , -- 
-                    ID     =>  0         -- 
-                )                        -- 
-                port map (               -- 
-                    WCLK    => ACLK    , -- In  :
-                    WE      => we      , -- In  :
-                    WADDR   => waddr   , -- In  :
-                    WDATA   => ip_data , -- In  :
-                    RCLK    => ACLK    , -- In  :
-                    RADDR   => raddr   , -- In  :
-                    RDATA   => wq_data   -- Out :
-                );
-            STRB: SDPRAM                 -- 
-                generic map(             -- 
-                    DEPTH  =>  8       , -- 2**8  = 256bit(16*128/8bit)
-                    RWIDTH =>  4       , -- 2**4  = 128/8=16
-                    WWIDTH =>  4       , -- 2**4  = 128/8=16
-                    WEBIT  =>  0       , -- 
-                    ID     =>  0         -- 
-                )                        -- 
-                port map (               -- 
-                    WCLK    => ACLK    , -- In  :
-                    WE      => we      , -- In  :
-                    WADDR   => waddr   , -- In  :
-                    WDATA   => ip_strb , -- In  :
-                    RCLK    => ACLK    , -- In  :
-                    RADDR   => raddr   , -- In  :
-                    RDATA   => wq_strb   -- Out :
+            DATA: SDPRAM                                 -- 
+                generic map(                             -- 
+                    DEPTH  =>  DATA_WIDTH+ADDR_WIDTH   , --
+                    RWIDTH =>  DATA_WIDTH              , --
+                    WWIDTH =>  DATA_WIDTH              , --
+                    WEBIT  =>  0                       , -- 
+                    ID     =>  0                         -- 
+                )                                        -- 
+                port map (                               -- 
+                    WCLK    => ACLK                    , -- In  :
+                    WE      => we                      , -- In  :
+                    WADDR   => waddr                   , -- In  :
+                    WDATA   => ip_data                 , -- In  :
+                    RCLK    => ACLK                    , -- In  :
+                    RADDR   => raddr                   , -- In  :
+                    RDATA   => wq_data                   -- Out :
+                );                                       -- 
+            STRB: SDPRAM                                 -- 
+                generic map(                             -- 
+                    DEPTH  =>  STRB_WIDTH+ADDR_WIDTH   , --
+                    RWIDTH =>  STRB_WIDTH              , -- 
+                    WWIDTH =>  STRB_WIDTH              , -- 
+                    WEBIT  =>  0                       , -- 
+                    ID     =>  0                         -- 
+                )                                        -- 
+                port map (                               -- 
+                    WCLK    => ACLK                    , -- In  :
+                    WE      => we                      , -- In  :
+                    WADDR   => waddr                   , -- In  :
+                    WDATA   => ip_strb                 , -- In  :
+                    RCLK    => ACLK                    , -- In  :
+                    RADDR   => raddr                   , -- In  :
+                    RDATA   => wq_strb                   -- Out :
                 );
         end block;
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        OPORT: block
+        OUTLET: block
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
-            signal    q_valid   :  std_logic_vector(2 downto 0);
+            signal    q_valid   :  std_logic_vector(DATA_OUTLET_REGS downto 0);
         begin 
-            QUEUE: QUEUE_REGISTER                -- 
-                generic map (                    -- 
-                    QUEUE_SIZE  => 2           , -- 
-                    DATA_BITS   => WORD_BITS     -- 
-                )                                -- 
-                port map (                       -- 
-                    CLK         => ACLK        , -- In  :
-                    RST         => reset       , -- In  :
-                    CLR         => clear       , -- In  :
-                    I_DATA      => i_word      , -- In  :
-                    I_VAL       => wo_valid    , -- In  :
-                    I_RDY       => wo_ready    , -- Out :
-                    Q_DATA      => q_word      , -- Out :
-                    Q_VAL       => q_valid     , -- Out :
-                    Q_RDY       => ACP_WREADY    -- In  :
+            QUEUE: QUEUE_REGISTER                    -- 
+                generic map (                        -- 
+                    QUEUE_SIZE  => DATA_OUTLET_REGS, -- 
+                    DATA_BITS   => WORD_BITS         -- 
+                )                                    -- 
+                port map (                           -- 
+                    CLK         => ACLK            , -- In  :
+                    RST         => reset           , -- In  :
+                    CLR         => clear           , -- In  :
+                    I_DATA      => i_word          , -- In  :
+                    I_VAL       => wo_valid        , -- In  :
+                    I_RDY       => wo_ready        , -- Out :
+                    Q_DATA      => q_word          , -- Out :
+                    Q_VAL       => q_valid         , -- Out :
+                    Q_RDY       => ACP_WREADY        -- In  :
                 );
             i_word(WDATA_HI downto WDATA_LO) <= wq_data;
             i_word(WSTRB_HI downto WSTRB_LO) <= wq_strb;
@@ -628,7 +642,7 @@ begin
     -------------------------------------------------------------------------------
     -- Write Response Block
     -------------------------------------------------------------------------------
-    B: block
+    RESP: block
         signal    q_last        :  boolean;
         signal    q_valid       :  boolean;
         signal    q_ready       :  boolean;

@@ -5,8 +5,6 @@ add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../PipeWork/src/components/sd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/components.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_response_queue.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_read_adapter.vhd
-add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_read_decerr.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_write_adapter.vhd
-add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_write_decerr.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../PipeWork/src/components/sdpram_xilinx_ultrascale_auto_select.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_adapter.vhd

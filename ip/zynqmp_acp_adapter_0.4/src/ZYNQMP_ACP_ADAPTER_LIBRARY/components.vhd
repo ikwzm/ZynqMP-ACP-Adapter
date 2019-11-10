@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 0.3.0                                                           --
---!     @date    2019/11/06                                                      --
+--!     @version 0.4.0                                                           --
+--!     @date    2019/11/10                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -473,14 +473,20 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        READ_RESP_QUEUE     : --! @brief READ RESPONSE QUEUE SIZE :
+        RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
                               integer range 1 to 4  := 2;
-        WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
+        RDATA_INTAKE_REGS   : --! @brief READ  DATA INTAKE REGISTER :
+                              integer range 0 to 1  := 0;
+        WRESP_QUEUE_SIZE    : --! @brief WRITE RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        WDATA_QUEUE_SIZE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
-        WRITE_MAX_LENGTH    : --! @brief WRITE MAX BURST LENGTH :
-                              integer range 4 to 4  := 4;
-        WRITE_RESP_QUEUE    : --! @brief WRITE RESPONSE QUEUE SIZE :
-                              integer range 1 to 4  := 2
+        WDATA_OUTLET_REGS   : --! @brief DATA OUTLET REGSITER :
+                              integer range 0 to 8  := 5;
+        WDATA_INTAKE_REGS   : --! @brief DATA INTAKE REGSITER :
+                              integer range 0 to 1  := 0
     );
     port(
     -------------------------------------------------------------------------------
@@ -612,81 +618,14 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
-                              integer range 1 to 4  := 2;
-        DATA_LATENCY        : --! @brief RDATA LATENCY :
-                              integer := 2
-    );
-    port(
-    -------------------------------------------------------------------------------
-    -- Clock / Reset Signals.
-    -------------------------------------------------------------------------------
-        ACLK                : in  std_logic;
-        ARESETn             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- AXI4 Read Address Channel Signals.
-    -------------------------------------------------------------------------------
-        AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        AXI_ARLEN           : in  std_logic_vector(7 downto 0);
-        AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
-        AXI_ARBURST         : in  std_logic_vector(1 downto 0);
-        AXI_ARLOCK          : in  std_logic_vector(0 downto 0);
-        AXI_ARCACHE         : in  std_logic_vector(3 downto 0);
-        AXI_ARPROT          : in  std_logic_vector(2 downto 0);
-        AXI_ARQOS           : in  std_logic_vector(3 downto 0);
-        AXI_ARREGION        : in  std_logic_vector(3 downto 0);
-        AXI_ARVALID         : in  std_logic;
-        AXI_ARREADY         : out std_logic;
-    -------------------------------------------------------------------------------
-    -- AXI4 Read Data Channel Signals.
-    -------------------------------------------------------------------------------
-        AXI_RID             : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        AXI_RDATA           : out std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        AXI_RRESP           : out std_logic_vector(1 downto 0);
-        AXI_RLAST           : out std_logic;
-        AXI_RVALID          : out std_logic;
-        AXI_RREADY          : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- ZynqMP ACP Read Address Channel Signals.
-    -------------------------------------------------------------------------------
-        ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        ACP_ARLEN           : out std_logic_vector(7 downto 0);
-        ACP_ARSIZE          : out std_logic_vector(2 downto 0);
-        ACP_ARBURST         : out std_logic_vector(1 downto 0);
-        ACP_ARLOCK          : out std_logic_vector(0 downto 0);
-        ACP_ARCACHE         : out std_logic_vector(3 downto 0);
-        ACP_ARPROT          : out std_logic_vector(2 downto 0);
-        ACP_ARQOS           : out std_logic_vector(3 downto 0);
-        ACP_ARREGION        : out std_logic_vector(3 downto 0);
-        ACP_ARVALID         : out std_logic;
-        ACP_ARREADY         : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- ZynqMP ACP AXI4 Read Data Channel Signals.
-    -------------------------------------------------------------------------------
-        ACP_RID             : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        ACP_RDATA           : in  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        ACP_RRESP           : in  std_logic_vector(1 downto 0);
-        ACP_RLAST           : in  std_logic;
-        ACP_RVALID          : in  std_logic;
-        ACP_RREADY          : out std_logic
-    );
-end component;
------------------------------------------------------------------------------------
---! @brief ZYNQMP_ACP_READ_DECERR                                                --
------------------------------------------------------------------------------------
-component ZYNQMP_ACP_READ_DECERR
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-    generic (
-        AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
-                              integer := 64;
-        AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
-                              integer := 128;
-        AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
-                              integer := 6
+        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+                              integer range 4 to 4  := 4;
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        DATA_QUEUE_SIZE     : --! @brief DATA QUEUE SIZE :
+                              integer range 0 to 4  := 2;
+        DATA_INTAKE_REGS    : --! @brief DATA INTAKE REGSITER :
+                              integer range 0 to 1  := 0
     );
     port(
     -------------------------------------------------------------------------------
@@ -795,95 +734,16 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        WRITE_DATA_QUEUE    : --! @brief WRITE DATA QUEUE SIZE :
-                              integer range 4 to 32 := 16;
-        WRITE_MAX_LENGTH    : --! @brief ACP MAX BURST LENGTH :
+        MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
-        RESP_QUEUE_SIZE     : --! @brief RESPONSE_QUEUE_SIZE :
-                              integer range 1 to 4  := 2
-    );
-    port(
-    -------------------------------------------------------------------------------
-    -- Clock / Reset Signals.
-    -------------------------------------------------------------------------------
-        ACLK                : in  std_logic;
-        ARESETn             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- AXI4 Write Address Channel Signals.
-    -------------------------------------------------------------------------------
-        AXI_AWID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        AXI_AWADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        AXI_AWLEN           : in  std_logic_vector(7 downto 0);
-        AXI_AWSIZE          : in  std_logic_vector(2 downto 0);
-        AXI_AWBURST         : in  std_logic_vector(1 downto 0);
-        AXI_AWLOCK          : in  std_logic_vector(0 downto 0);
-        AXI_AWCACHE         : in  std_logic_vector(3 downto 0);
-        AXI_AWPROT          : in  std_logic_vector(2 downto 0);
-        AXI_AWQOS           : in  std_logic_vector(3 downto 0);
-        AXI_AWREGION        : in  std_logic_vector(3 downto 0);
-        AXI_AWVALID         : in  std_logic;
-        AXI_AWREADY         : out std_logic;
-    -------------------------------------------------------------------------------
-    -- AXI4 Write Data Channel Signals.
-    -------------------------------------------------------------------------------
-        AXI_WDATA           : in  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        AXI_WSTRB           : in  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-        AXI_WLAST           : in  std_logic;
-        AXI_WVALID          : in  std_logic;
-        AXI_WREADY          : out std_logic;
-    -------------------------------------------------------------------------------
-    -- AXI4 Write Response Channel Signals.
-    -------------------------------------------------------------------------------
-        AXI_BID             : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        AXI_BRESP           : out std_logic_vector(1 downto 0);
-        AXI_BVALID          : out std_logic;
-        AXI_BREADY          : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- ZynqMP ACP Write Address Channel Signals.
-    -------------------------------------------------------------------------------
-        ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        ACP_AWLEN           : out std_logic_vector(7 downto 0);
-        ACP_AWSIZE          : out std_logic_vector(2 downto 0);
-        ACP_AWBURST         : out std_logic_vector(1 downto 0);
-        ACP_AWLOCK          : out std_logic_vector(0 downto 0);
-        ACP_AWCACHE         : out std_logic_vector(3 downto 0);
-        ACP_AWPROT          : out std_logic_vector(2 downto 0);
-        ACP_AWQOS           : out std_logic_vector(3 downto 0);
-        ACP_AWREGION        : out std_logic_vector(3 downto 0);
-        ACP_AWVALID         : out std_logic;
-        ACP_AWREADY         : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- ZynqMP ACP Write Data Channel Signals.
-    -------------------------------------------------------------------------------
-        ACP_WDATA           : out std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        ACP_WSTRB           : out std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
-        ACP_WLAST           : out std_logic;
-        ACP_WVALID          : out std_logic;
-        ACP_WREADY          : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- ZynqMP ACP Write Response Channel Signals.
-    -------------------------------------------------------------------------------
-        ACP_BID             : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
-        ACP_BRESP           : in  std_logic_vector(1 downto 0);
-        ACP_BVALID          : in  std_logic;
-        ACP_BREADY          : out std_logic
-    );
-end component;
------------------------------------------------------------------------------------
---! @brief ZYNQMP_ACP_WRITE_DECERR                                               --
------------------------------------------------------------------------------------
-component ZYNQMP_ACP_WRITE_DECERR
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-    generic (
-        AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
-                              integer := 64;
-        AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
-                              integer := 128;
-        AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
-                              integer := 6
+        RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
+                              integer range 1 to 8  := 2;
+        DATA_QUEUE_SIZE     : --! @brief WRITE DATA QUEUE SIZE :
+                              integer range 4 to 32 := 16;
+        DATA_OUTLET_REGS    : --! @brief DATA OUTLET REGSITER :
+                              integer range 0 to 8  := 0;
+        DATA_INTAKE_REGS    : --! @brief DATA INTAKE REGSITER :
+                              integer range 0 to 1  := 0
     );
     port(
     -------------------------------------------------------------------------------
