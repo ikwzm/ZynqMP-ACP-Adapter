@@ -3,8 +3,8 @@
 #
 set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
-set ip_version              "0.3"
-set ip_core_revision        3
+set ip_version              "0.4"
+set ip_core_revision        1
 set ip_vendor_name          "ikwzm"
 set ip_library_name         "PIPEORK"
 
@@ -90,10 +90,10 @@ set_property supported_families {zynq Production virtex7 Production qvirtex7 Pro
 #
 # Set Core Version
 #
-set_property version       $ip_version               [ipx::current_core]
-set_property core_revision $ip_core_revision         [ipx::current_core]
-set_property name          $ip_name                  [ipx::current_core]
-set_property display_name  $ip_name                  [ipx::current_core]
+set_property version       "$ip_version"             [ipx::current_core]
+set_property core_revision "$ip_core_revision"       [ipx::current_core]
+set_property name          "$ip_name"                [ipx::current_core]
+set_property display_name  "$ip_name"                [ipx::current_core]
 set_property description   "ZynqMP-ACP-AXI Adapter"  [ipx::current_core]
 #
 # Generate files
