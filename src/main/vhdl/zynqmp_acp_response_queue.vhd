@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_response_queue.vhd
 --!     @brief   ZynqMP ACP Response Queue
---!     @version 0.5.0
+--!     @version 0.5.1
 --!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------

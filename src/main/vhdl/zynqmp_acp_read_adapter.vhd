@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.5.0
+--!     @version 0.5.1
 --!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2019 Ichiro Kawazome
+--      Copyright (C) 2019-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -50,12 +50,12 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
-        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
@@ -145,6 +145,8 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
     signal    curr_state        :  STATE_TYPE;
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+    signal    xfer_cache        :  std_logic_vector(AXI_ARCACHE'range);
+    signal    xfer_prot         :  std_logic_vector(AXI_ARPROT 'range);
     signal    xfer_last         :  boolean;
     signal    xfer_len          :  unsigned( 2 downto 0);
     signal    remain_len        :  unsigned( 8 downto 0);
@@ -161,6 +163,31 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     signal    rdata_last        :  boolean;
     signal    rdata_valid       :  boolean;
     signal    rdata_ready       :  boolean;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    function  overlay_signals(
+        signal    SIGS          :  std_logic_vector;
+        constant  OVERLAY       :  integer;
+        constant  VALUE         :  integer
+    )             return           std_logic_vector
+    is
+        alias     sigs_in       :  std_logic_vector(SIGS'length-1 downto 0) is SIGS;
+        variable  result        :  std_logic_vector(SIGS'length-1 downto 0);
+        constant  overlay_mask  :  std_logic_vector(SIGS'length-1 downto 0)
+                                := std_logic_vector(to_unsigned(OVERLAY, SIGS'length));
+        constant  overlay_value :  std_logic_vector(SIGS'length-1 downto 0)
+                                := std_logic_vector(to_unsigned(VALUE  , SIGS'length));
+    begin
+        for i in result'range loop
+            if (overlay_mask(i) = '1') then
+                result(i) := overlay_value(i);
+            else
+                result(i) := sigs_in(i);
+            end if;
+        end loop;
+        return result;
+    end function;
 begin
     -------------------------------------------------------------------------------
     --
@@ -176,6 +203,8 @@ begin
         if (reset = '1') then
                 curr_state <= IDLE_STATE;
                 xfer_id    <= (others => '0');
+                xfer_cache <= (others => '0');
+                xfer_prot  <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 burst_len  <= (others => '0');
@@ -185,6 +214,8 @@ begin
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
                 xfer_id    <= (others => '0');
+                xfer_cache <= (others => '0');
+                xfer_prot  <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 burst_len  <= (others => '0');
@@ -198,6 +229,8 @@ begin
                         if (AXI_ARVALID = '1') then
                             curr_state <= WAIT_STATE;
                             xfer_id    <= AXI_ARID;
+                            xfer_cache <= AXI_ARCACHE;
+                            xfer_prot  <= AXI_ARPROT;
                             page_num   <= unsigned(AXI_ARADDR(page_num'range));
                             next_word_pos   := unsigned(AXI_ARADDR(word_pos'range));
                             next_remain_len := resize(unsigned(AXI_ARLEN),remain_len'length) + 1;
@@ -243,6 +276,8 @@ begin
     ACP_ARADDR  <= std_logic_vector(page_num) & std_logic_vector(word_pos) & std_logic_vector(byte_pos);
     ACP_ARLEN   <= std_logic_vector(burst_len);
     ACP_ARID    <= xfer_id;
+    ACP_ARCACHE <= overlay_signals(xfer_cache, ARCACHE_OVERLAY, ARCACHE_VALUE);
+    ACP_ARPROT  <= overlay_signals(xfer_prot , ARPROT_OVERLAY , ARPROT_VALUE );
     xfer_last   <= (remain_len <= xfer_len);
     resp_queue_valid  <= (curr_state = ADDR_STATE and ACP_ARREADY = '1');
     -------------------------------------------------------------------------------
@@ -255,8 +290,6 @@ begin
                 ACP_ARLOCK   <= (others => '0');
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
-                ACP_ARCACHE  <= (others => '0');
-                ACP_ARPROT   <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 ACP_ARSIZE   <= (others => '0');
@@ -264,24 +297,12 @@ begin
                 ACP_ARLOCK   <= (others => '0');
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
-                ACP_ARCACHE  <= (others => '0');
-                ACP_ARPROT   <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_ARVALID = '1') then
                 ACP_ARSIZE   <= AXI_ARSIZE   ;
                 ACP_ARBURST  <= AXI_ARBURST  ;
                 ACP_ARLOCK   <= AXI_ARLOCK   ;
                 ACP_ARQOS    <= AXI_ARQOS    ;
                 ACP_ARREGION <= AXI_ARREGION ;
-                if (ARCACHE_OVERLAY = 0) then
-                    ACP_ARCACHE <= AXI_ARCACHE;
-                else
-                    ACP_ARCACHE <= std_logic_vector(to_unsigned(ARCACHE_VALUE, ACP_ARCACHE'length));
-                end if;
-                if (ARPROT_OVERLAY = 0) then
-                    ACP_ARPROT  <= AXI_ARPROT;
-                else
-                    ACP_ARPROT  <= std_logic_vector(to_unsigned(ARPROT_VALUE , ACP_ARPROT 'length));
-                end if;
             end if;
         end if;
     end process;
