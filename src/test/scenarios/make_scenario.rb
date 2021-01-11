@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 #---------------------------------------------------------------------------------
 #
-#       Version     :   0.3.0
-#       Created     :   2019/11/6
+#       Version     :   0.5.0
+#       Created     :   2021/1/11
 #       File name   :   make_scneario.rb
 #       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 #       Description :   ZynqMP-ACP-Adapter用シナリオ生成スクリプト
 #
 #---------------------------------------------------------------------------------
 #
-#       Copyright (C) 2019 Ichiro Kawazome
+#       Copyright (C) 2019-2021 Ichiro Kawazome
 #       All rights reserved.
 # 
 #       Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,7 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   def initialize
     @program_name      = "make_scenario"
-    @program_version   = "0.0.3"
+    @program_version   = "0.5.0"
     @acp_data_width    = 128
     @max_xfer_size     = 4096
     @axi_model         = nil
