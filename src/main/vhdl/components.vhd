@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 0.4.0                                                           --
---!     @date    2019/11/10                                                      --
+--!     @version 0.5.0                                                           --
+--!     @date    2021/01/11                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2019 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2021 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
@@ -86,6 +86,10 @@ component REDUCER
         O_SHIFT_MAX : --! @brief OUTPUT SHIFT SIZE MINIMUM NUMBER :
                       --! O_SHIFT信号の配列の最大値を指定する.
                       integer := 1;
+        NO_VAL_SET  : --! @brief NO VALID SET :
+                      --! キューのうち NO_VAL_SET-1 で示されたキューの 内容をチェックして、
+                      --! VAL = 0 の時の DATA 内容を NO_VAL_DATA にセットする.
+                      integer := 0;
         I_JUSTIFIED : --! @brief INPUT WORD JUSTIFIED :
                       --! 入力側の有効なデータが常にLOW側に詰められていることを
                       --! 示すフラグ.
@@ -155,6 +159,26 @@ component REDUCER
                       --!   その際、最後のワードと同時にO_FLUSH信号がアサートされる.
                       --! * DONE信号との違いは、FLUSH_ENABLEの項を参照.
                       in  std_logic := '0';
+        START_DATA  : --! @brief START DATA :
+                      --! * START = '1' の時に DATA に設定する値
+                      in  std_logic_vector(WORD_BITS-1 downto 0) := (others => '0');
+        START_STRB  : --! @brief START STRB :
+                      --! * START = '1' の時に STRB に設定する値
+                      in  std_logic_vector(STRB_BITS-1 downto 0) := (others => '0');
+        FLUSH_DATA  : --! @brief FLUSH DATA :
+                      --! * フラッシュ処理の際に DATA に設定する値
+                      in  std_logic_vector(WORD_BITS-1 downto 0) := (others => '0');
+        FLUSH_STRB  : --! @brief FLUSH STRB :
+                      --! * フラッシュ処理の際に STRB に設定する値
+                      in  std_logic_vector(STRB_BITS-1 downto 0) := (others => '0');
+        NO_VAL_DATA : --! @brief NO_VALID DATA :
+                      --! * VAL=0 の時に強制的に DATA に設定する値.
+                      --! * NO_VAL_SET > 0 の時のみ有効.
+                      in  std_logic_vector(WORD_BITS-1 downto 0) := (others => '0');
+        NO_VAL_STRB : --! @brief NO_VALID STRB :
+                      --! * VAL=0 の時に強制的に STRB に設定する値.
+                      --! * NO_VAL_SET > 0 の時のみ有効.
+                      in  std_logic_vector(STRB_BITS-1 downto 0) := (others => '0');
         BUSY        : --! @brief BUSY :
                       --! ビジー信号.
                       --! * 最初にデータが入力されたときにアサートされる.
@@ -473,6 +497,22 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
+        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
@@ -618,6 +658,14 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -734,6 +782,14 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :

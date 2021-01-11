@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.4.0
---!     @date    2019/11/10
+--!     @version 0.5.0
+--!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019 Ichiro Kawazome
+--      Copyright (C) 2019-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,8 @@ component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
+        OVERLAY_CACHE   : boolean := FALSE;
+        OVERLAY_PROT    : boolean := FALSE;
         FINISH_ABORT    : boolean := FALSE
     );
 end component;
@@ -61,6 +63,8 @@ entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
+        OVERLAY_CACHE   : boolean := FALSE;
+        OVERLAY_PROT    : boolean := FALSE;
         FINISH_ABORT    : boolean := FALSE
     );
 end     ZYNQMP_ACP_ADAPTER_TEST_BENCH;
@@ -503,8 +507,12 @@ begin
             AXI_ID_WIDTH        => AXI_ID_WIDTH        ,
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
             AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
-            READ_ENABLE         => ENABLE_TO_INTEGER(READ_ENABLE ),
-            WRITE_ENABLE        => ENABLE_TO_INTEGER(WRITE_ENABLE)
+            ARCACHE_OVERLAY     => ENABLE_TO_INTEGER(OVERLAY_CACHE),
+            ARPROT_OVERLAY      => ENABLE_TO_INTEGER(OVERLAY_PROT ),
+            AWCACHE_OVERLAY     => ENABLE_TO_INTEGER(OVERLAY_CACHE),
+            AWPROT_OVERLAY      => ENABLE_TO_INTEGER(OVERLAY_PROT ),
+            READ_ENABLE         => ENABLE_TO_INTEGER(READ_ENABLE  ),
+            WRITE_ENABLE        => ENABLE_TO_INTEGER(WRITE_ENABLE )
         )
         port map(
         --------------------------------------------------------------------------

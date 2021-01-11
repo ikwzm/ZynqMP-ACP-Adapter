@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.4.0
---!     @date    2019/11/10
+--!     @version 0.5.0
+--!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019 Ichiro Kawazome
+--      Copyright (C) 2019-2019 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,14 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -245,27 +253,35 @@ begin
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
-                ACP_ARCACHE  <= (others => '0');
-                ACP_ARPROT   <= (others => '0');
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
+                ACP_ARCACHE  <= (others => '0');
+                ACP_ARPROT   <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 ACP_ARSIZE   <= (others => '0');
                 ACP_ARBURST  <= (others => '0');
                 ACP_ARLOCK   <= (others => '0');
-                ACP_ARCACHE  <= (others => '0');
-                ACP_ARPROT   <= (others => '0');
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
+                ACP_ARCACHE  <= (others => '0');
+                ACP_ARPROT   <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_ARVALID = '1') then
                 ACP_ARSIZE   <= AXI_ARSIZE   ;
                 ACP_ARBURST  <= AXI_ARBURST  ;
                 ACP_ARLOCK   <= AXI_ARLOCK   ;
-                ACP_ARCACHE  <= AXI_ARCACHE  ;
-                ACP_ARPROT   <= AXI_ARPROT   ;
                 ACP_ARQOS    <= AXI_ARQOS    ;
                 ACP_ARREGION <= AXI_ARREGION ;
+                if (ARCACHE_OVERLAY = 0) then
+                    ACP_ARCACHE <= AXI_ARCACHE;
+                else
+                    ACP_ARCACHE <= std_logic_vector(to_unsigned(ARCACHE_VALUE, ACP_ARCACHE'length));
+                end if;
+                if (ARPROT_OVERLAY = 0) then
+                    ACP_ARPROT  <= AXI_ARPROT;
+                else
+                    ACP_ARPROT  <= std_logic_vector(to_unsigned(ARPROT_VALUE , ACP_ARPROT 'length));
+                end if;
             end if;
         end if;
     end process;

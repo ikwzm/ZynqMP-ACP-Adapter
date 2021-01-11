@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.4.0
---!     @date    2019/11/10
+--!     @version 0.5.0
+--!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019 Ichiro Kawazome
+--      Copyright (C) 2019-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,14 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -296,27 +304,35 @@ begin
                 ACP_AWSIZE   <= (others => '0');
                 ACP_AWBURST  <= (others => '0');
                 ACP_AWLOCK   <= (others => '0');
-                ACP_AWCACHE  <= (others => '0');
-                ACP_AWPROT   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
+                ACP_AWCACHE  <= (others => '0');
+                ACP_AWPROT   <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 ACP_AWSIZE   <= (others => '0');
                 ACP_AWBURST  <= (others => '0');
                 ACP_AWLOCK   <= (others => '0');
-                ACP_AWCACHE  <= (others => '0');
-                ACP_AWPROT   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
+                ACP_AWCACHE  <= (others => '0');
+                ACP_AWPROT   <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_AWVALID = '1' and ao_empty = '1') then
                 ACP_AWSIZE   <= AXI_AWSIZE   ;
                 ACP_AWBURST  <= AXI_AWBURST  ;
                 ACP_AWLOCK   <= AXI_AWLOCK   ;
-                ACP_AWCACHE  <= AXI_AWCACHE  ;
-                ACP_AWPROT   <= AXI_AWPROT   ;
                 ACP_AWQOS    <= AXI_AWQOS    ;
                 ACP_AWREGION <= AXI_AWREGION ;
+                if (AWCACHE_OVERLAY = 0) then
+                    ACP_AWCACHE <= AXI_AWCACHE;
+                else
+                    ACP_AWCACHE <= std_logic_vector(to_unsigned(AWCACHE_VALUE, ACP_AWCACHE'length));
+                end if;
+                if (AWPROT_OVERLAY = 0) then
+                    ACP_AWPROT  <= AXI_AWPROT;
+                else
+                    ACP_AWPROT  <= std_logic_vector(to_unsigned(AWPROT_VALUE , ACP_AWPROT 'length));
+                end if;
             end if;
         end if;
     end process;

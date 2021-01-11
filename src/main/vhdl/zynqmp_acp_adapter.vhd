@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_adapter.vhd
 --!     @brief   ZynqMP ACP Adapter
---!     @version 0.4.0
---!     @date    2019/11/10
+--!     @version 0.5.0
+--!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019 Ichiro Kawazome
+--      Copyright (C) 2019-2021 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,22 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
+        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              integer range 0 to 15 := 15;
+        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
+                              integer range 0 to 1  := 0;
+        AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              integer range 0 to 7  := 2;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
@@ -204,6 +220,10 @@ begin
                 AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      , -- 
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
                 AXI_ID_WIDTH        => AXI_ID_WIDTH        , --
+                ARCACHE_OVERLAY     => ARCACHE_OVERLAY     , --
+                ARCACHE_VALUE       => ARCACHE_VALUE       , --
+                ARPROT_OVERLAY      => ARPROT_OVERLAY      , --
+                ARPROT_VALUE        => ARPROT_VALUE        , --
                 RESP_QUEUE_SIZE     => RRESP_QUEUE_SIZE    , --
                 DATA_QUEUE_SIZE     => RDATA_QUEUE_SIZE    , --
                 DATA_INTAKE_REGS    => RDATA_INTAKE_REGS     -- 
@@ -339,6 +359,10 @@ begin
                 AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      , -- 
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
                 AXI_ID_WIDTH        => AXI_ID_WIDTH        , -- 
+                AWCACHE_OVERLAY     => AWCACHE_OVERLAY     , --
+                AWCACHE_VALUE       => AWCACHE_VALUE       , --
+                AWPROT_OVERLAY      => AWPROT_OVERLAY      , --
+                AWPROT_VALUE        => AWPROT_VALUE        , --
                 RESP_QUEUE_SIZE     => WRESP_QUEUE_SIZE    , -- 
                 DATA_QUEUE_SIZE     => WDATA_QUEUE_SIZE    , -- 
                 DATA_OUTLET_REGS    => WDATA_OUTLET_REGS   , -- 
