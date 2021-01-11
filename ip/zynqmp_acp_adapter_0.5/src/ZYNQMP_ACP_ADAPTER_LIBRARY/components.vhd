@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 0.5.0                                                           --
+--!     @version 0.5.1                                                           --
 --!     @date    2021/01/11                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
@@ -497,20 +497,20 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
-        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
-        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+        AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK :
+                              integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
-        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+        AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY MASK :
+                              integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
@@ -658,12 +658,12 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
-        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
-        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+        ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
@@ -783,11 +783,11 @@ component ZYNQMP_ACP_WRITE_ADAPTER
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+                              integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
         AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+                              integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :

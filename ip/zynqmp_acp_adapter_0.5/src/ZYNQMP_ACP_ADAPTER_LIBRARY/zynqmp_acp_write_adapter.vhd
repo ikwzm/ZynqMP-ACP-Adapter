@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.5.0
+--!     @version 0.5.1
 --!     @date    2021/1/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
@@ -51,11 +51,11 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
-                              integer range 0 to 1  := 0;
+                              integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
                               integer range 0 to 15 := 15;
         AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY :
-                              integer range 0 to 1  := 0;
+                              integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
@@ -161,6 +161,8 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
     signal    curr_state        :  STATE_TYPE;
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+    signal    xfer_cache        :  std_logic_vector(AXI_AWCACHE'range);
+    signal    xfer_prot         :  std_logic_vector(AXI_AWPROT 'range);
     signal    xfer_start        :  boolean;
     signal    xfer_last         :  boolean;
     signal    remain_len        :  integer range 0 to MAX_BURST_LENGTH-1;
@@ -206,6 +208,31 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     constant  wq_enable         :  std_logic := '1';
     signal    wq_busy           :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    function  overlay_signals(
+        signal    SIGS          :  std_logic_vector;
+        constant  OVERLAY       :  integer;
+        constant  VALUE         :  integer
+    )             return           std_logic_vector
+    is
+        alias     sigs_in       :  std_logic_vector(SIGS'length-1 downto 0) is SIGS;
+        variable  result        :  std_logic_vector(SIGS'length-1 downto 0);
+        constant  overlay_mask  :  std_logic_vector(SIGS'length-1 downto 0)
+                                := std_logic_vector(to_unsigned(OVERLAY, SIGS'length));
+        constant  overlay_value :  std_logic_vector(SIGS'length-1 downto 0)
+                                := std_logic_vector(to_unsigned(VALUE  , SIGS'length));
+    begin
+        for i in result'range loop
+            if (overlay_mask(i) = '1') then
+                result(i) := overlay_value(i);
+            else
+                result(i) := sigs_in(i);
+            end if;
+        end loop;
+        return result;
+    end function;
 begin
     -------------------------------------------------------------------------------
     --
@@ -220,6 +247,8 @@ begin
         if (reset = '1') then
                 curr_state <= IDLE_STATE;
                 xfer_id    <= (others => '0');
+                xfer_cache <= (others => '0');
+                xfer_prot  <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 byte_pos   <= (others => '0');
@@ -228,6 +257,8 @@ begin
             if (clear = '1') then
                 curr_state <= IDLE_STATE;
                 xfer_id    <= (others => '0');
+                xfer_cache <= (others => '0');
+                xfer_prot  <= (others => '0');
                 page_num   <= (others => '0');
                 word_pos   <= (others => '0');
                 byte_pos   <= (others => '0');
@@ -238,6 +269,8 @@ begin
                         if (AXI_AWVALID = '1' and ao_empty = '1') then
                             curr_state <= WAIT_STATE;
                             xfer_id    <= AXI_AWID;
+                            xfer_cache <= AXI_AWCACHE;
+                            xfer_prot  <= AXI_AWPROT;
                             page_num   <= unsigned(AXI_AWADDR(page_num'range));
                             word_pos   <= unsigned(AXI_AWADDR(word_pos'range));
                             byte_pos   <= unsigned(AXI_AWADDR(byte_pos'range));
@@ -306,8 +339,6 @@ begin
                 ACP_AWLOCK   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
-                ACP_AWCACHE  <= (others => '0');
-                ACP_AWPROT   <= (others => '0');
         elsif (ACLK'event and ACLK = '1') then
             if (clear = '1') then
                 ACP_AWSIZE   <= (others => '0');
@@ -315,28 +346,18 @@ begin
                 ACP_AWLOCK   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
-                ACP_AWCACHE  <= (others => '0');
-                ACP_AWPROT   <= (others => '0');
             elsif (curr_state = IDLE_STATE and AXI_AWVALID = '1' and ao_empty = '1') then
                 ACP_AWSIZE   <= AXI_AWSIZE   ;
                 ACP_AWBURST  <= AXI_AWBURST  ;
                 ACP_AWLOCK   <= AXI_AWLOCK   ;
                 ACP_AWQOS    <= AXI_AWQOS    ;
                 ACP_AWREGION <= AXI_AWREGION ;
-                if (AWCACHE_OVERLAY = 0) then
-                    ACP_AWCACHE <= AXI_AWCACHE;
-                else
-                    ACP_AWCACHE <= std_logic_vector(to_unsigned(AWCACHE_VALUE, ACP_AWCACHE'length));
-                end if;
-                if (AWPROT_OVERLAY = 0) then
-                    ACP_AWPROT  <= AXI_AWPROT;
-                else
-                    ACP_AWPROT  <= std_logic_vector(to_unsigned(AWPROT_VALUE , ACP_AWPROT 'length));
-                end if;
             end if;
         end if;
     end process;
     ACP_AWID    <= xfer_id;
+    ACP_AWCACHE <= overlay_signals(xfer_cache, AWCACHE_OVERLAY, AWCACHE_VALUE);
+    ACP_AWPROT  <= overlay_signals(xfer_prot , AWPROT_OVERLAY , AWPROT_VALUE );
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
