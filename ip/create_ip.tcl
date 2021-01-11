@@ -3,7 +3,7 @@
 #
 set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
-set ip_version              "0.4"
+set ip_version              "0.5"
 set ip_core_revision        1
 set ip_vendor_name          "ikwzm"
 set ip_library_name         "PIPEORK"
