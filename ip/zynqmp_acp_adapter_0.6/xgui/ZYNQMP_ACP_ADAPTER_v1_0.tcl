@@ -3,35 +3,26 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "Component_Name"
   #Adding Page
   set Page_0 [ipgui::add_page $IPINST -name "Page 0"]
-  #Adding Group
-  set WIDTH [ipgui::add_group $IPINST -name "WIDTH" -parent ${Page_0}]
-  ipgui::add_param $IPINST -name "AXI_ID_WIDTH" -parent ${WIDTH}
-  ipgui::add_param $IPINST -name "AXI_DATA_WIDTH" -parent ${WIDTH}
-  ipgui::add_param $IPINST -name "AXI_ADDR_WIDTH" -parent ${WIDTH}
-
-  #Adding Group
-  set READ [ipgui::add_group $IPINST -name "READ" -parent ${Page_0}]
-  ipgui::add_param $IPINST -name "READ_ENABLE" -parent ${READ}
-  ipgui::add_param $IPINST -name "RRESP_QUEUE_SIZE" -parent ${READ}
-  ipgui::add_param $IPINST -name "RDATA_QUEUE_SIZE" -parent ${READ}
-  ipgui::add_param $IPINST -name "RDATA_INTAKE_REGS" -parent ${READ}
-  ipgui::add_param $IPINST -name "ARCACHE_OVERLAY" -parent ${READ}
-  ipgui::add_param $IPINST -name "ARCACHE_VALUE" -parent ${READ}
-  ipgui::add_param $IPINST -name "ARPROT_OVERLAY" -parent ${READ}
-  ipgui::add_param $IPINST -name "ARPROT_VALUE" -parent ${READ}
-
-  #Adding Group
-  set WRITE [ipgui::add_group $IPINST -name "WRITE" -parent ${Page_0}]
-  ipgui::add_param $IPINST -name "WRITE_ENABLE" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "WRESP_QUEUE_SIZE" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "WDATA_QUEUE_SIZE" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "WDATA_OUTLET_REGS" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "WDATA_INTAKE_REGS" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "AWCACHE_OVERLAY" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "AWCACHE_VALUE" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "AWPROT_OVERLAY" -parent ${WRITE}
-  ipgui::add_param $IPINST -name "AWPROT_VALUE" -parent ${WRITE}
-
+  ipgui::add_param $IPINST -name "ARCACHE_OVERLAY" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "ARCACHE_VALUE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "ARPROT_OVERLAY" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "ARPROT_VALUE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AWCACHE_OVERLAY" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AWCACHE_VALUE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AWPROT_OVERLAY" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AWPROT_VALUE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AXI_ADDR_WIDTH" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AXI_DATA_WIDTH" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "AXI_ID_WIDTH" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "RDATA_INTAKE_REGS" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "RDATA_QUEUE_SIZE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "READ_ENABLE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "RRESP_QUEUE_SIZE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WDATA_INTAKE_REGS" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WDATA_OUTLET_REGS" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WDATA_QUEUE_SIZE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WRESP_QUEUE_SIZE" -parent ${Page_0}
+  ipgui::add_param $IPINST -name "WRITE_ENABLE" -parent ${Page_0}
 
 
 }
