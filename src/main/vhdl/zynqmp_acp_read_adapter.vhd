@@ -84,17 +84,17 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     -- AXI4 Read Address Channel Signals.
     -------------------------------------------------------------------------------
-        AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0) := (others => '0');
         AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
-        AXI_ARLEN           : in  std_logic_vector(7 downto 0);
-        AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
-        AXI_ARBURST         : in  std_logic_vector(1 downto 0);
-        AXI_ARLOCK          : in  std_logic_vector(0 downto 0);
-        AXI_ARCACHE         : in  std_logic_vector(3 downto 0);
-        AXI_ARPROT          : in  std_logic_vector(2 downto 0);
-        AXI_ARQOS           : in  std_logic_vector(3 downto 0);
-        AXI_ARREGION        : in  std_logic_vector(3 downto 0);
+        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0) := (others => '0');
+        AXI_ARLEN           : in  std_logic_vector(7 downto 0) := (others => '0');
+        AXI_ARSIZE          : in  std_logic_vector(2 downto 0) := "100";
+        AXI_ARBURST         : in  std_logic_vector(1 downto 0) := "01";
+        AXI_ARLOCK          : in  std_logic_vector(0 downto 0) := "0";
+        AXI_ARCACHE         : in  std_logic_vector(3 downto 0) := "1111";
+        AXI_ARPROT          : in  std_logic_vector(2 downto 0) := "010";
+        AXI_ARQOS           : in  std_logic_vector(3 downto 0) := "0000";
+        AXI_ARREGION        : in  std_logic_vector(3 downto 0) := "0000";
         AXI_ARVALID         : in  std_logic;
         AXI_ARREADY         : out std_logic;
     -------------------------------------------------------------------------------
