@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.5.1
---!     @date    2021/1/11
+--!     @version 0.7.0
+--!     @date    2025/5/4
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2021 Ichiro Kawazome
+--      Copyright (C) 2019-2025 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,12 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
+                              integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
@@ -58,6 +64,8 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -78,6 +86,7 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
         AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_ARLEN           : in  std_logic_vector(7 downto 0);
         AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
         AXI_ARBURST         : in  std_logic_vector(1 downto 0);
@@ -102,6 +111,7 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARUSER          : out std_logic_vector(1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
         ACP_ARBURST         : out std_logic_vector(1 downto 0);
@@ -133,6 +143,7 @@ library ZYNQMP_ACP_ADAPTER_LIBRARY;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_RECEIVER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_AxUSER;
 architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -144,9 +155,10 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE);
     signal    curr_state        :  STATE_TYPE;
+    signal    acp_load          :  std_logic;
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    xfer_cache        :  std_logic_vector(AXI_ARCACHE'range);
-    signal    xfer_prot         :  std_logic_vector(AXI_ARPROT 'range);
+    signal    xfer_cache        :  std_logic_vector(ACP_ARCACHE'range);
+    signal    xfer_prot         :  std_logic_vector(ACP_ARPROT 'range);
     signal    xfer_last         :  boolean;
     signal    xfer_len          :  unsigned( 2 downto 0);
     signal    remain_len        :  unsigned( 8 downto 0);
@@ -272,6 +284,7 @@ begin
         end if;
     end process;
     AXI_ARREADY <= '1' when (curr_state = IDLE_STATE) else '0';
+    acp_load    <= '1' when (curr_state = IDLE_STATE and AXI_ARVALID = '1') else '0';
     ACP_ARVALID <= '1' when (curr_state = ADDR_STATE) else '0';
     ACP_ARADDR  <= std_logic_vector(page_num) & std_logic_vector(word_pos) & std_logic_vector(byte_pos);
     ACP_ARLEN   <= std_logic_vector(burst_len);
@@ -297,7 +310,7 @@ begin
                 ACP_ARLOCK   <= (others => '0');
                 ACP_ARQOS    <= (others => '0');
                 ACP_ARREGION <= (others => '0');
-            elsif (curr_state = IDLE_STATE and AXI_ARVALID = '1') then
+            elsif (acp_load = '1') then
                 ACP_ARSIZE   <= AXI_ARSIZE   ;
                 ACP_ARBURST  <= AXI_ARBURST  ;
                 ACP_ARLOCK   <= AXI_ARLOCK   ;
@@ -306,6 +319,24 @@ begin
             end if;
         end if;
     end process;
+    -------------------------------------------------------------------------------
+    -- ACP ARUSER
+    -------------------------------------------------------------------------------
+    ACP_AUSER: ZYNQMP_ACP_AxUSER                       -- 
+        generic map (                                  --
+            ACP_SHARE_TYPE      => ARSHARE_TYPE      , -- 
+            AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH   , --
+            AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS, --
+            AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  -- 
+        )                                              -- 
+        port map (                                     -- 
+            CLK             => ACLK                  , -- In  :
+            RST             => reset                 , -- In  :
+            CLR             => clear                 , -- In  :
+            LOAD            => acp_load              , -- In  :
+            AXI_AUSER       => AXI_ARUSER            , -- In  :
+            ACP_AUSER       => ACP_ARUSER              -- Out :
+        );                                             -- 
     -------------------------------------------------------------------------------
     -- Read Response Request Queue
     ---------------------------------------------------------------------------

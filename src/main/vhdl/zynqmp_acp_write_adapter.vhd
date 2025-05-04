@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.5.1
---!     @date    2021/1/11
+--!     @version 0.7.0
+--!     @date    2025/5/4
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2021 Ichiro Kawazome
+--      Copyright (C) 2019-2025 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,12 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
+                              integer := 1;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
@@ -58,6 +64,8 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -80,6 +88,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
         AXI_AWID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_AWADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_AWUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_AWLEN           : in  std_logic_vector(7 downto 0);
         AXI_AWSIZE          : in  std_logic_vector(2 downto 0);
         AXI_AWBURST         : in  std_logic_vector(1 downto 0);
@@ -110,6 +119,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWUSER          : out std_logic_vector(1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
         ACP_AWBURST         : out std_logic_vector(1 downto 0);
@@ -149,6 +159,7 @@ use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.REDUCER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.SDPRAM;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_AxUSER;
 architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
@@ -160,9 +171,10 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
     signal    curr_state        :  STATE_TYPE;
+    signal    acp_load          :  std_logic;
     signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
-    signal    xfer_cache        :  std_logic_vector(AXI_AWCACHE'range);
-    signal    xfer_prot         :  std_logic_vector(AXI_AWPROT 'range);
+    signal    xfer_cache        :  std_logic_vector(ACP_AWCACHE'range);
+    signal    xfer_prot         :  std_logic_vector(ACP_AWPROT 'range);
     signal    xfer_start        :  boolean;
     signal    xfer_last         :  boolean;
     signal    remain_len        :  integer range 0 to MAX_BURST_LENGTH-1;
@@ -329,6 +341,7 @@ begin
         end if;
     end process;
     AXI_AWREADY <= '1' when (curr_state = IDLE_STATE and ao_empty = '1') else '0';
+    acp_load    <= '1' when (curr_state = IDLE_STATE and ao_empty = '1' and AXI_AWVALID = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -346,7 +359,7 @@ begin
                 ACP_AWLOCK   <= (others => '0');
                 ACP_AWQOS    <= (others => '0');
                 ACP_AWREGION <= (others => '0');
-            elsif (curr_state = IDLE_STATE and AXI_AWVALID = '1' and ao_empty = '1') then
+            elsif (acp_load = '1') then
                 ACP_AWSIZE   <= AXI_AWSIZE   ;
                 ACP_AWBURST  <= AXI_AWBURST  ;
                 ACP_AWLOCK   <= AXI_AWLOCK   ;
@@ -358,6 +371,24 @@ begin
     ACP_AWID    <= xfer_id;
     ACP_AWCACHE <= overlay_signals(xfer_cache, AWCACHE_OVERLAY, AWCACHE_VALUE);
     ACP_AWPROT  <= overlay_signals(xfer_prot , AWPROT_OVERLAY , AWPROT_VALUE );
+    -------------------------------------------------------------------------------
+    -- ACP ARUSER
+    -------------------------------------------------------------------------------
+    ACP_AUSER: ZYNQMP_ACP_AxUSER                       -- 
+        generic map (                                  --
+            ACP_SHARE_TYPE      => AWSHARE_TYPE      , -- 
+            AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH   , --
+            AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS, --
+            AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  -- 
+        )                                              -- 
+        port map (                                     -- 
+            CLK             => ACLK                  , -- In  :
+            RST             => reset                 , -- In  :
+            CLR             => clear                 , -- In  :
+            LOAD            => acp_load              , -- In  :
+            AXI_AUSER       => AXI_AWUSER            , -- In  :
+            ACP_AUSER       => ACP_AWUSER              -- Out :
+        );                                             -- 
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------

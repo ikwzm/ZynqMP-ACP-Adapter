@@ -2,12 +2,12 @@
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
 --!     @version 0.5.1                                                           --
---!     @date    2021/01/11                                                      --
+--!     @date    2025/05/04                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2021 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2025 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
@@ -95,6 +95,16 @@ component REDUCER
                       --! 示すフラグ.
                       --! * 常にLOW側に詰められている場合は、シフタが必要なくなる
                       --!   ため回路が簡単になる.
+                      integer range 0 to 1 := 0;
+        I_DVAL_ENABLE:--! @brief INPUT DATA VALID ENABLE :
+                      --! ワードデータのうち有効なデータであることを示す信号として
+                      --! I_DVAL 信号を使う.
+                      --! * I_DVAL_ENABLE=1を指定した場合は、I_DVAL をワードデータ
+                      --!   のうちの有効なデータであることを示す信号として使う.
+                      --! * I_DVAL_ENABLE=0を指定した場合は、I_STRB をワードデータ
+                      --!   のうちの有効なデータであることを示す信号として使う.
+                      --! * I_STRB の値に関係なく I_DATA と I_STRB をキューに格納
+                      --!   したい場合は I_DVAL を使うと良い.
                       integer range 0 to 1 := 0;
         FLUSH_ENABLE: --! @brief FLUSH ENABLE :
                       --! FLUSH/I_FLUSHによるフラッシュ処理を有効にするかどうかを
@@ -194,15 +204,24 @@ component REDUCER
     -------------------------------------------------------------------------------
         I_ENABLE    : --! @brief INPUT ENABLE :
                       --! 入力許可信号.
-                      --! * この信号がアサートされている場合、キューの入力を許可する.
-                      --! * この信号がネゲートされている場合、I_RDY アサートされない.
+                      --! * この信号がアサートされた１クロック後から、キューへの入力を開始
+                      --!   する(その際キューが入力可能ならばIRDY信号をアサートする).
+                      --! * この信号がネゲートされた１クロック後から、キューへの入力を停止
+                      --!   する(その際キューの状態に拘わらずIRDY信号をネゲートする).
                       in  std_logic := '1';
         I_DATA      : --! @brief INPUT WORD DATA :
                       --! ワードデータ入力.
                       in  std_logic_vector(I_WIDTH*WORD_BITS-1 downto 0);
         I_STRB      : --! @brief INPUT WORD ENABLE :
                       --! ワードストローブ信号入力.
-                      in  std_logic_vector(I_WIDTH*STRB_BITS-1 downto 0);
+                      in  std_logic_vector(I_WIDTH*STRB_BITS-1 downto 0) := (others => '1');
+        I_DVAL      : --! @brief INPUT WORD ENABLE :
+                      --! ワード有効信号入力.
+                      --! * I_DATA/I_STRB のうちどのワードをキューに入れるかを示す信号.
+                      --! * I_DVAL_ENABLE=1の時のみ有効.
+                      --! * I_DVAL_ENABLE=0の時は I_STRB 信号の値によって、どのワードを
+                      --!   キューに入れるかを示す.
+                      in  std_logic_vector(I_WIDTH          -1 downto 0) := (others => '1');
         I_DONE      : --! @brief INPUT WORD DONE :
                       --! 最終ワード信号入力.
                       --! * 最後の力ワードデータ入であることを示すフラグ.
@@ -219,7 +238,7 @@ component REDUCER
                       in  std_logic := '0';
         I_VAL       : --! @brief INPUT WORD VALID :
                       --! 入力ワード有効信号.
-                      --! * I_DATA/I_STRB/I_DONE/I_FLUSHが有効であることを示す.
+                      --! * I_DATA/I_STRB/I_DVAL/I_DONE/I_FLUSHが有効であることを示す.
                       --! * I_VAL='1'and I_RDY='1'でワードデータがキューに取り込まれる.
                       in  std_logic;
         I_RDY       : --! @brief INPUT WORD READY :
@@ -232,8 +251,10 @@ component REDUCER
     -------------------------------------------------------------------------------
         O_ENABLE    : --! @brief OUTPUT ENABLE :
                       --! 出力許可信号.
-                      --! * この信号がアサートされている場合、キューの出力を許可する.
-                      --! * この信号がネゲートされている場合、O_VAL アサートされない.
+                      --! * この信号がアサートされた１クロック後から、キューからの出力を開始
+                      --!   する(その際キューが出力可能ならばOVAL信号をアサートする).
+                      --! * この信号がネゲートされた１クロック後から、キューからの出力を停止
+                      --!   する(その際キューの状態に拘わらずOVAL信号をネゲートする).
                       in  std_logic := '1';
         O_DATA      : --! @brief OUTPUT WORD DATA :
                       --! ワードデータ出力.
@@ -497,6 +518,12 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI AxUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_AxUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
+                              integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
@@ -505,6 +532,8 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
@@ -513,6 +542,8 @@ component ZYNQMP_ACP_ADAPTER
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
@@ -539,6 +570,7 @@ component ZYNQMP_ACP_ADAPTER
     -------------------------------------------------------------------------------
         AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_ARLEN           : in  std_logic_vector(7 downto 0);
         AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
         AXI_ARBURST         : in  std_logic_vector(1 downto 0);
@@ -563,6 +595,7 @@ component ZYNQMP_ACP_ADAPTER
     -------------------------------------------------------------------------------
         AXI_AWID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_AWADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_AWUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_AWLEN           : in  std_logic_vector(7 downto 0);
         AXI_AWSIZE          : in  std_logic_vector(2 downto 0);
         AXI_AWBURST         : in  std_logic_vector(1 downto 0);
@@ -593,6 +626,7 @@ component ZYNQMP_ACP_ADAPTER
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARUSER          : out std_logic_vector(1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
         ACP_ARBURST         : out std_logic_vector(1 downto 0);
@@ -617,6 +651,7 @@ component ZYNQMP_ACP_ADAPTER
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWUSER          : out std_logic_vector(1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
         ACP_AWBURST         : out std_logic_vector(1 downto 0);
@@ -658,6 +693,12 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
+                              integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
@@ -666,6 +707,8 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -686,6 +729,7 @@ component ZYNQMP_ACP_READ_ADAPTER
     -------------------------------------------------------------------------------
         AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_ARLEN           : in  std_logic_vector(7 downto 0);
         AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
         AXI_ARBURST         : in  std_logic_vector(1 downto 0);
@@ -710,6 +754,7 @@ component ZYNQMP_ACP_READ_ADAPTER
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARUSER          : out std_logic_vector(1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
         ACP_ARBURST         : out std_logic_vector(1 downto 0);
@@ -782,6 +827,12 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
+                              integer := 1;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY :
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
@@ -790,6 +841,8 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
         RESP_QUEUE_SIZE     : --! @brief RESPONSE QUEUE SIZE :
@@ -812,6 +865,7 @@ component ZYNQMP_ACP_WRITE_ADAPTER
     -------------------------------------------------------------------------------
         AXI_AWID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_AWADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_AWUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_AWLEN           : in  std_logic_vector(7 downto 0);
         AXI_AWSIZE          : in  std_logic_vector(2 downto 0);
         AXI_AWBURST         : in  std_logic_vector(1 downto 0);
@@ -842,6 +896,7 @@ component ZYNQMP_ACP_WRITE_ADAPTER
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWUSER          : out std_logic_vector(1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
         ACP_AWBURST         : out std_logic_vector(1 downto 0);
@@ -867,6 +922,65 @@ component ZYNQMP_ACP_WRITE_ADAPTER
         ACP_BRESP           : in  std_logic_vector(1 downto 0);
         ACP_BVALID          : in  std_logic;
         ACP_BREADY          : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief ZYNQMP_ACP_AxUSER                                                     --
+-----------------------------------------------------------------------------------
+component ZYNQMP_ACP_AxUSER
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+    generic (
+        ACP_SHARE_TYPE      : --! @brief ACP SHARE TYPE:
+                              --! 0: Not Use AXI_AUSER, ACP_AxUSER <= Non-Sharable.
+                              --! 1: Not Use AXI_AUSER, ACP_AxUSER <= Inner-Sharable.
+                              --! 2: Not Use AXI_AUSER, ACP_AxUSER <= Outer-Sharable.
+                              --! 3: Use 2 bit of AXI_AUSER, 
+                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[1]:=AXI_AUSER[AXI_AUSER_BIT1_POS]
+                              --!    u[1:0]=00: ACP_AxUSER <= Non-Sharable
+                              --!    u[1:0]=01: ACP_AxUSER <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_AxUSER <= Outer-Sharable
+                              --! 4: Use 1 bit of AXI_AUSER, 
+                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AxUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AxUSER <= Inner-Sharable
+                              --! 5: Use 1 bit of AXI_AUSER,
+                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AxUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
+                              --! 6: Use 1 bit of AXI_AUSER,
+                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AxUSER <= Inner-Sharable
+                              --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
+                              integer range 0 to 6  := 0;
+        AXI_AUSER_WIDTH     : --! @brief AXI AUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI AUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI AUSER BIT1 POSITION :
+                              integer := 1
+    );
+    port(
+    -------------------------------------------------------------------------------
+    -- Clock / Reset Signals.
+    -------------------------------------------------------------------------------
+        CLK                 : in  std_logic;
+        RST                 : in  std_logic;
+        CLR                 : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- LOAD Signal.
+    -------------------------------------------------------------------------------
+        LOAD                : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- AXI AxUser Signal.
+    -------------------------------------------------------------------------------
+        AXI_AUSER           : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
+    -------------------------------------------------------------------------------
+    -- ACP AxUser Signal.
+    -------------------------------------------------------------------------------
+        ACP_AUSER           : out std_logic_vector(1 downto 0)
     );
 end component;
 end COMPONENTS;

@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_adapter.vhd
 --!     @brief   ZynqMP ACP Adapter
---!     @version 0.5.1
---!     @date    2021/1/11
+--!     @version 0.7.0
+--!     @date    2025/5/4
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2021 Ichiro Kawazome
+--      Copyright (C) 2019-2025 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,12 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
+        AXI_AUSER_WIDTH     : --! @brief AXI AxUSER WIDTH :
+                              integer := 2;
+        AXI_AUSER_BIT0_POS  : --! @brief AXI_AxUSER BIT0 POSITION :
+                              integer := 0;
+        AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
+                              integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
@@ -62,6 +68,8 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
@@ -70,6 +78,8 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
+        AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              integer range 0 to 6  := 0;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
@@ -96,6 +106,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
         AXI_ARID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_ARADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_ARUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_ARLEN           : in  std_logic_vector(7 downto 0);
         AXI_ARSIZE          : in  std_logic_vector(2 downto 0);
         AXI_ARBURST         : in  std_logic_vector(1 downto 0);
@@ -120,6 +131,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
         AXI_AWID            : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         AXI_AWADDR          : in  std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        AXI_AWUSER          : in  std_logic_vector(AXI_AUSER_WIDTH -1 downto 0);
         AXI_AWLEN           : in  std_logic_vector(7 downto 0);
         AXI_AWSIZE          : in  std_logic_vector(2 downto 0);
         AXI_AWBURST         : in  std_logic_vector(1 downto 0);
@@ -150,6 +162,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARUSER          : out std_logic_vector(1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
         ACP_ARBURST         : out std_logic_vector(1 downto 0);
@@ -174,6 +187,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWUSER          : out std_logic_vector(1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
         ACP_AWBURST         : out std_logic_vector(1 downto 0);
@@ -220,10 +234,14 @@ begin
                 AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      , -- 
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
                 AXI_ID_WIDTH        => AXI_ID_WIDTH        , --
+                AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     , --
+                AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS  , --
+                AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  , --
                 ARCACHE_OVERLAY     => ARCACHE_OVERLAY     , --
                 ARCACHE_VALUE       => ARCACHE_VALUE       , --
                 ARPROT_OVERLAY      => ARPROT_OVERLAY      , --
                 ARPROT_VALUE        => ARPROT_VALUE        , --
+                ARSHARE_TYPE        => ARSHARE_TYPE        , --
                 RESP_QUEUE_SIZE     => RRESP_QUEUE_SIZE    , --
                 DATA_QUEUE_SIZE     => RDATA_QUEUE_SIZE    , --
                 DATA_INTAKE_REGS    => RDATA_INTAKE_REGS     -- 
@@ -239,6 +257,7 @@ begin
             ----------------------------------------------------------------------
                 AXI_ARID            => AXI_ARID            , -- In  :
                 AXI_ARADDR          => AXI_ARADDR          , -- In  :
+                AXI_ARUSER          => AXI_ARUSER          , -- In  :
                 AXI_ARLEN           => AXI_ARLEN           , -- In  :
                 AXI_ARSIZE          => AXI_ARSIZE          , -- In  :
                 AXI_ARBURST         => AXI_ARBURST         , -- In  :
@@ -263,6 +282,7 @@ begin
             ----------------------------------------------------------------------
                 ACP_ARID            => ACP_ARID            , -- Out :
                 ACP_ARADDR          => ACP_ARADDR          , -- Out :
+                ACP_ARUSER          => ACP_ARUSER          , -- Out :
                 ACP_ARLEN           => ACP_ARLEN           , -- Out :
                 ACP_ARSIZE          => ACP_ARSIZE          , -- Out :
                 ACP_ARBURST         => ACP_ARBURST         , -- Out :
@@ -339,6 +359,7 @@ begin
         ---------------------------------------------------------------------------
         ACP_ARID     <= (others => '0');
         ACP_ARADDR   <= (others => '0');
+        ACP_ARUSER   <= (others => '0');
         ACP_ARLEN    <= (others => '0');
         ACP_ARSIZE   <= (others => '0');
         ACP_ARBURST  <= (others => '0');
@@ -359,10 +380,14 @@ begin
                 AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      , -- 
                 AXI_DATA_WIDTH      => AXI_DATA_WIDTH      , -- 
                 AXI_ID_WIDTH        => AXI_ID_WIDTH        , -- 
+                AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     , -- 
+                AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS  , --
+                AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  , --
                 AWCACHE_OVERLAY     => AWCACHE_OVERLAY     , --
                 AWCACHE_VALUE       => AWCACHE_VALUE       , --
                 AWPROT_OVERLAY      => AWPROT_OVERLAY      , --
                 AWPROT_VALUE        => AWPROT_VALUE        , --
+                AWSHARE_TYPE        => AWSHARE_TYPE        , --
                 RESP_QUEUE_SIZE     => WRESP_QUEUE_SIZE    , -- 
                 DATA_QUEUE_SIZE     => WDATA_QUEUE_SIZE    , -- 
                 DATA_OUTLET_REGS    => WDATA_OUTLET_REGS   , -- 
@@ -379,6 +404,7 @@ begin
             -----------------------------------------------------------------------
                 AXI_AWID            => AXI_AWID            , -- In  :
                 AXI_AWADDR          => AXI_AWADDR          , -- In  :
+                AXI_AWUSER          => AXI_AWUSER          , -- In  :
                 AXI_AWLEN           => AXI_AWLEN           , -- In  :
                 AXI_AWSIZE          => AXI_AWSIZE          , -- In  :
                 AXI_AWBURST         => AXI_AWBURST         , -- In  :
@@ -409,6 +435,7 @@ begin
             -----------------------------------------------------------------------
                 ACP_AWID            => ACP_AWID            , -- Out :
                 ACP_AWADDR          => ACP_AWADDR          , -- Out :
+                ACP_AWUSER          => ACP_AWUSER          , -- Out :
                 ACP_AWLEN           => ACP_AWLEN           , -- Out :
                 ACP_AWSIZE          => ACP_AWSIZE          , -- Out :
                 ACP_AWBURST         => ACP_AWBURST         , -- Out :
@@ -496,6 +523,7 @@ begin
         ---------------------------------------------------------------------------
         ACP_AWID     <= (others => '0');
         ACP_AWADDR   <= (others => '0');
+        ACP_AWUSER   <= (others => '0');
         ACP_AWLEN    <= (others => '0');
         ACP_AWSIZE   <= (others => '0');
         ACP_AWBURST  <= (others => '0');
