@@ -142,13 +142,13 @@ begin
                 elsif (LOAD = '1') then
                     if (AXI_AUSER_BIT0_POS >= AXI_AUSER'low ) and
                        (AXI_AUSER_BIT0_POS <= AXI_AUSER'high) then
-                        u(0) := AUSER(AXI_AUSER_BIT0_POS);
+                        u(0) := AXI_AUSER(AXI_AUSER_BIT0_POS);
                     else
                         u(0) := '0';
                     end if;
                     if (AXI_AUSER_BIT1_POS >= AXI_AUSER'low ) and
                        (AXI_AUSER_BIT1_POS <= AXI_AUSER'high) then
-                        u(1) := AUSER(AXI_AUSER_BIT1_POS);
+                        u(1) := AXI_AUSER(AXI_AUSER_BIT1_POS);
                     else
                         u(1) := '0';
                     end if;
@@ -184,6 +184,6 @@ begin
                     end case;
                 end if;
             end if;
-        end if;
+        end process;
     end generate;
 end RTL;    
