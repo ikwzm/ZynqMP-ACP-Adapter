@@ -49,21 +49,21 @@ entity  ZYNQMP_ACP_AxUSER is
                               --! 1: Not Use AXI_AUSER, ACP_AxUSER <= Inner-Sharable.
                               --! 2: Not Use AXI_AUSER, ACP_AxUSER <= Outer-Sharable.
                               --! 3: Use 2 bit of AXI_AUSER, 
-                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[1]:=AXI_AUSER[AXI_AUSER_BIT1_POS]
+                              --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[1] := AXI_AUSER[AXI_AUSER_BIT1_POS]
                               --!    u[1:0]=00: ACP_AxUSER <= Non-Sharable
                               --!    u[1:0]=01: ACP_AxUSER <= Inner-Sharable
                               --!    u[1:0]=1x: ACP_AxUSER <= Outer-Sharable
                               --! 4: Use 1 bit of AXI_AUSER, 
-                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
                               --!    u[0]=0: ACP_AxUSER <= Non-Sharable
                               --!    u[0]=1: ACP_AxUSER <= Inner-Sharable
                               --! 5: Use 1 bit of AXI_AUSER,
-                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
                               --!    u[0]=0: ACP_AxUSER <= Non-Sharable
                               --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
                               --! 6: Use 1 bit of AXI_AUSER,
-                              --!    u[0]:=AXI_AUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
                               --!    u[0]=0: ACP_AxUSER <= Inner-Sharable
                               --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;

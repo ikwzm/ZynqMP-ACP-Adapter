@@ -65,6 +65,27 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
         ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+                              --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
+                              --! 1: Not Use AXI_ARUSER, ACP_ARUSER <= Inner-Sharable.
+                              --! 2: Not Use AXI_ARUSER, ACP_ARUSER <= Outer-Sharable.
+                              --! 3: Use 2 bit of AXI_ARUSER, 
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[1] := AXI_ARUSER[AXI_AUSER_BIT1_POS]
+                              --!    u[1:0]=00: ACP_ARUSER <= Non-Sharable
+                              --!    u[1:0]=01: ACP_ARUSER <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_ARUSER <= Outer-Sharable
+                              --! 4: Use 1 bit of AXI_ARUSER, 
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Inner-Sharable
+                              --! 5: Use 1 bit of AXI_ARUSER,
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
+                              --! 6: Use 1 bit of AXI_ARUSER,
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Inner-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;

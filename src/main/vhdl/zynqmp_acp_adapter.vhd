@@ -68,7 +68,28 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
-        ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+        ARSHARE_TYPE        : --! @brief ACP READ SHARE TYPE:
+                              --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
+                              --! 1: Not Use AXI_ARUSER, ACP_ARUSER <= Inner-Sharable.
+                              --! 2: Not Use AXI_ARUSER, ACP_ARUSER <= Outer-Sharable.
+                              --! 3: Use 2 bit of AXI_ARUSER, 
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[1] := AXI_ARUSER[AXI_AUSER_BIT1_POS]
+                              --!    u[1:0]=00: ACP_ARUSER <= Non-Sharable
+                              --!    u[1:0]=01: ACP_ARUSER <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_ARUSER <= Outer-Sharable
+                              --! 4: Use 1 bit of AXI_ARUSER, 
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Inner-Sharable
+                              --! 5: Use 1 bit of AXI_ARUSER,
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
+                              --! 6: Use 1 bit of AXI_ARUSER,
+                              --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_ARUSER <= Inner-Sharable
+                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK :
                               integer range 0 to 15 := 0;
@@ -78,7 +99,28 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
                               integer range 0 to 7  := 2;
-        AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
+        AWSHARE_TYPE        : --! @brief ACP WRITE SHARE TYPE:
+                              --! 0: Not Use AXI_AWUSER, ACP_AWUSER <= Non-Sharable.
+                              --! 1: Not Use AXI_AWUSER, ACP_AWUSER <= Inner-Sharable.
+                              --! 2: Not Use AXI_AWUSER, ACP_AWUSER <= Outer-Sharable.
+                              --! 3: Use 2 bit of AXI_AWUSER, 
+                              --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[1] := AXI_AWUSER[AXI_AUSER_BIT1_POS]
+                              --!    u[1:0]=00: ACP_AWUSER <= Non-Sharable
+                              --!    u[1:0]=01: ACP_AWUSER <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_AWUSER <= Outer-Sharable
+                              --! 4: Use 1 bit of AXI_AWUSER, 
+                              --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AWUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AWUSER <= Inner-Sharable
+                              --! 5: Use 1 bit of AXI_AWUSER,
+                              --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AWUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AWUSER <= Outer-Sharable
+                              --! 6: Use 1 bit of AXI_AWUSER,
+                              --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
+                              --!    u[0]=0: ACP_AWUSER <= Inner-Sharable
+                              --!    u[0]=1: ACP_AWUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
