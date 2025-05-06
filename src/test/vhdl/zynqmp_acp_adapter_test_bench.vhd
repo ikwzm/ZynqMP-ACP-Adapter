@@ -46,8 +46,11 @@ component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
-        OVERLAY_CACHE   : integer := 0;
-        OVERLAY_PROT    : integer := 0;
+        CACHE_OVERLAY   : integer := 0;
+        CACHE_VALUE     : integer := 15;
+        PROT_OVERLAY    : integer := 0;
+        PROT_VALUE      : integer := 2;
+        SHARE_TYPE      : integer := 3;
         FINISH_ABORT    : boolean := FALSE
     );
 end component;
@@ -63,9 +66,11 @@ entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
         SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
         READ_ENABLE     : boolean := TRUE;
         WRITE_ENABLE    : boolean := TRUE;
-        OVERLAY_CACHE   : integer := 0;
-        OVERLAY_PROT    : integer := 0;
-        SHARE_TYPE      : integer := 0;
+        CACHE_OVERLAY   : integer := 0;
+        CACHE_VALUE     : integer := 15;
+        PROT_OVERLAY    : integer := 0;
+        PROT_VALUE      : integer := 2;
+        SHARE_TYPE      : integer := 3;
         FINISH_ABORT    : boolean := FALSE
     );
 end     ZYNQMP_ACP_ADAPTER_TEST_BENCH;
@@ -510,11 +515,15 @@ begin
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
             AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     ,
-            ARCACHE_OVERLAY     => OVERLAY_CACHE       ,
-            ARPROT_OVERLAY      => OVERLAY_PROT        ,
+            ARCACHE_OVERLAY     => CACHE_OVERLAY       ,
+            ARCACHE_VALUE       => CACHE_VALUE         ,
+            ARPROT_OVERLAY      => PROT_OVERLAY        ,
+            ARPROT_VALUE        => PROT_VALUE          ,
             ARSHARE_TYPE        => SHARE_TYPE          ,
-            AWCACHE_OVERLAY     => OVERLAY_CACHE       ,
-            AWPROT_OVERLAY      => OVERLAY_PROT        ,
+            AWCACHE_OVERLAY     => CACHE_OVERLAY       ,
+            AWCACHE_VALUE       => CACHE_VALUE         ,
+            AWPROT_OVERLAY      => PROT_OVERLAY        ,
+            AWPROT_VALUE        => PROT_VALUE          ,
             AWSHARE_TYPE        => SHARE_TYPE          ,
             READ_ENABLE         => ENABLE_TO_INTEGER(READ_ENABLE  ),
             WRITE_ENABLE        => ENABLE_TO_INTEGER(WRITE_ENABLE )
@@ -716,6 +725,184 @@ begin
         SCENARIO_FILE   => SCENARIO_FILE ,
         READ_ENABLE     => FALSE         ,
         WRITE_ENABLE    => TRUE          ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_cache_overlay_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        CACHE_OVERLAY   => 15            ,
+        CACHE_VALUE     => 15            ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_prot_overlay_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        PROT_OVERLAY    => 7             ,
+        PROT_VALUE      => 2             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_0_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_0_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_0_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_0_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_0_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_0_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 0             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_1_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_1_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_1_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_1_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_1_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_1_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 1             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_2_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_2_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_2_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_2_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_2_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_2_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 2             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_4_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_4_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_4_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_4_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_4_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_4_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 4             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_5_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_5_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_5_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_5_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_5_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_5_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 5             ,
+        FINISH_ABORT    => FINISH_ABORT
+    );
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_SHARE_6_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_SHARE_6_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_SHARE_6_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_share_6_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_SHARE_6_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_SHARE_6_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        SHARE_TYPE      => 6             ,
         FINISH_ABORT    => FINISH_ABORT
     );
 end MODEL;
