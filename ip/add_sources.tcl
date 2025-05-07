@@ -3,6 +3,7 @@ add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../PipeWork/src/components/qu
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../PipeWork/src/components/reducer.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../PipeWork/src/components/sdpram.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/components.vhd
+add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_axuser.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_response_queue.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_read_adapter.vhd
 add_vhdl_file sources_1 ZYNQMP_ACP_ADAPTER_LIBRARY ../src/main/vhdl/zynqmp_acp_write_adapter.vhd
