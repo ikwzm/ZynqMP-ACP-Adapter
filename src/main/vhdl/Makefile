@@ -6,6 +6,7 @@ ENTITY_FILES = ../../../PipeWork/src/components/reducer.vhd         \
                zynqmp_acp_read_adapter.vhd                          \
                zynqmp_acp_response_queue.vhd                        \
                zynqmp_acp_write_adapter.vhd                         \
+               zynqmp_acp_axuser.vhd                                \
                ${ENDLIST}
 
 components.vhd : ${ENTITY_FILES}

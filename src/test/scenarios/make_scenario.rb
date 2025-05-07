@@ -142,13 +142,15 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   class ACP_Read_Transaction
     attr_reader   :addr, :data, :tran, :tran_size, :remain_size
-    def initialize(model, addr, data, id, cache)
+    def initialize(model, addr, data, id, cache, prot, share)
       @model       = model
       @addr        = addr
       @data        = data
       @remain_size = data.length
       @id          = id
       @cache       = cache
+      @prot        = prot
+      @share       = share
       @data_pos    = 0
       generate()
     end
@@ -176,8 +178,10 @@ class ScenarioGenerater
       end
       data  = Array.new(@fraction, 0) + @data[@data_pos,@tran_size] + Array.new(post_fraction, 0)
       tran  = {:Address => @addr, :Data => data}
-      tran[:ID]    = @id    if not @id.nil?
-      tran[:Cache] = @cache if not @cache.nil?
+      tran[:ID]          = @id    if not @id.nil?
+      tran[:Cache]       = @cache if not @cache.nil?
+      tran[:Prot]        = @prot  if not @prot.nil?
+      tran[:AddressUser] = @share if not @share.nil?
       @tran = @model.read_transaction.clone(tran)
     end
   end
@@ -189,6 +193,10 @@ class ScenarioGenerater
     test_minor_num    = 1
     address_pattern   = (0..64).step(4).to_a
     size_pattern      = [1,4,8,12,16,20,32,48,64,96,128,192,256]
+    axi_id            = nil
+    axi_cache         = nil
+    axi_prot          = nil
+    acp_share         = nil
 
     size_pattern.each { |size|
       address_pattern.each { |axi_addr|
@@ -203,11 +211,11 @@ class ScenarioGenerater
         io.print "  - SAY : ", title, sprintf(" READ  ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
         axi_data = (1..size).collect{rand(256)}
-        axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data})
+        axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache, :Prot => axi_prot, :AddressUser => acp_share})
         axi_seq  = @axi_model.default_sequence.clone({})
         io.print @axi_model.execute(axi_tran, axi_seq)
 
-        acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, nil, nil)
+        acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache, axi_prot, acp_share)
         data_start_event  = :ADDR_XFER
         data_xfer_pattern = Dummy_Plug::ScenarioWriter::SequentialNumberGenerater.new([8,0,0,0])
 
@@ -239,6 +247,8 @@ class ScenarioGenerater
       axi_addr = rand(@max_xfer_size) + (rand(0xFFFFF) * 0x1000)
       axi_id   = rand(2**@axi_model.width.id-1)
       axi_cache= rand(15)
+      axi_prot = rand(7)
+      acp_share= rand(2)
       size     = rand(255)+1
       if ((axi_addr % @max_xfer_size) + size) > @max_xfer_size then
         size = @max_xfer_size - (axi_addr % @max_xfer_size)
@@ -249,7 +259,7 @@ class ScenarioGenerater
       io.print "  - SAY : ", title, sprintf(" READ  ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
       axi_data = (1..size).collect{rand(256)}
-      axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache})
+      axi_tran = @axi_model.read_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache, :Prot => axi_prot, :AddressUser => acp_share})
       axi_seq  = @axi_model.default_sequence.clone({
         :AddrStartEvent     => addr_start_event_pattern[rand(addr_start_event_pattern.size)],
         :DataStartEvent     => data_start_event_pattern[rand(data_start_event_pattern.size)],
@@ -260,7 +270,7 @@ class ScenarioGenerater
       })
       io.print @axi_model.execute(axi_tran, axi_seq)
 
-      acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache)
+      acp = ACP_Read_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache, axi_prot, acp_share)
       data_start_event  = data_start_event_pattern[rand(data_start_event_pattern.size)]
 
       while(acp.remain_size > 0) do
@@ -282,13 +292,15 @@ class ScenarioGenerater
   #-------------------------------------------------------------------------------
   class ACP_Write_Transaction
     attr_reader   :addr, :data, :tran, :tran_size, :remain_size
-    def initialize(model, addr, data, id, cache)
+    def initialize(model, addr, data, id, cache, prot, share)
       @model       = model
       @addr        = addr
       @data        = data
       @remain_size = data.length
       @id          = id
       @cache       = cache
+      @prot        = prot
+      @share       = share
       @data_pos    = 0
       generate()
     end
@@ -309,8 +321,10 @@ class ScenarioGenerater
       end
       data  = @data[@data_pos,@tran_size]
       tran  = {:Address => @addr, :Data => data}
-      tran[:ID]    = @id    if not @id.nil?
-      tran[:Cache] = @cache if not @cache.nil?
+      tran[:ID]          = @id    if not @id.nil?
+      tran[:Cache]       = @cache if not @cache.nil?
+      tran[:Prot]        = @prot  if not @prot.nil?
+      tran[:AddressUser] = @share if not @share.nil?
       @tran = @model.write_transaction.clone(tran)
     end
   end
@@ -322,6 +336,11 @@ class ScenarioGenerater
     test_minor_num    = 1
     address_pattern   = (0..64).step(4).to_a
     size_pattern      = [1,4,8,12,16,20,32,48,64,96,128,192,256]
+    axi_id            = nil
+    axi_cache         = nil
+    axi_prot          = nil
+    acp_share         = nil
+
     size_pattern.each { |size|
       address_pattern.each { |axi_addr|
         title   = sprintf("%s.%d.%-5d", @name.to_s, test_major_num, test_minor_num)
@@ -335,10 +354,10 @@ class ScenarioGenerater
         io.print "- N : \n"
         io.print "  - SAY : ", title, sprintf(" WRITE ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
-        axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data})
+        axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache, :Prot => axi_prot, :AddressUser => acp_share})
         io.print @axi_model.execute(axi_tran, axi_seq)
 
-        acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, nil, nil)
+        acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache, axi_prot, acp_share)
         resp_start_event = :ADDR_XFER
 
         while(acp.remain_size > 0) do
@@ -363,11 +382,14 @@ class ScenarioGenerater
     addr_delay_cycle_pattern = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
     data_xfer_pattern        = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
     resp_delay_cycle_pattern = Dummy_Plug::ScenarioWriter::RandomNumberGenerater.new([0,0,0,0,0,1,1,2,3,4])
+
     (1..1000).each {|test_minor_num|  
       title    = sprintf("%s.%d.%-5d", @name.to_s, test_major_num, test_minor_num)
       axi_addr = rand(@max_xfer_size) + (rand(0xFFFFF) * 0x1000)
       axi_id   = rand(2**@axi_model.width.id-1)
       axi_cache= rand(15)
+      axi_prot = rand(7)
+      acp_share= rand(2)
       size     = rand(255)+1
       if ((axi_addr % @max_xfer_size) + size) > @max_xfer_size then
         size = @max_xfer_size - (axi_addr % @max_xfer_size)
@@ -385,10 +407,10 @@ class ScenarioGenerater
       io.print "- N : \n"
       io.print "  - SAY : ", title, sprintf(" WRITE ADDR=0x%08X, SIZE=%-3d\n", axi_addr, size)
 
-      axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache})
+      axi_tran = @axi_model.write_transaction.clone({:Address => axi_addr, :Data => axi_data, :ID => axi_id, :Cache => axi_cache, :Prot => axi_prot, :AddressUser => acp_share})
       io.print @axi_model.execute(axi_tran, axi_seq)
 
-      acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache)
+      acp = ACP_Write_Transaction.new(@acp_model, axi_addr, axi_data, axi_id, axi_cache, axi_prot, acp_share)
       addr_start_event = addr_start_event_pattern[rand(addr_start_event_pattern.size)]
       data_start_event = data_start_event_pattern[rand(data_start_event_pattern.size)]
       resp_start_event = :ADDR_XFER
@@ -425,6 +447,8 @@ class ScenarioGenerater
       @axi_model = Dummy_Plug::ScenarioWriter::AXI4::Master.new("AXI", {
         :ID_WIDTH      =>  4,
         :ADDR_WIDTH    => 32,
+        :A_CACHE_WIDTH =>  4,
+        :A_USER_WIDTH  =>  2,
         :DATA_WIDTH    => @acp_data_width,
         :MAX_TRAN_SIZE => @max_xfer_size  
       })
@@ -433,6 +457,8 @@ class ScenarioGenerater
       @acp_model = Dummy_Plug::ScenarioWriter::AXI4::Slave.new("ACP", {
         :ID_WIDTH      =>  4,
         :ADDR_WIDTH    => 32,
+        :A_CACHE_WIDTH =>  4,
+        :A_USER_WIDTH  =>  2,
         :DATA_WIDTH    => @acp_data_width,
         :MAX_TRAN_SIZE => @max_xfer_size  
       })
