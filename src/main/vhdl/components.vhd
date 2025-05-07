@@ -2,7 +2,7 @@
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
 --!     @version 0.5.1                                                           --
---!     @date    2025/05/05                                                      --
+--!     @date    2025/05/07                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -525,12 +525,39 @@ component ZYNQMP_ACP_ADAPTER
         AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
                               integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              --!  0: ACP_ARCACHE[3:0] <= AXI_ARCACHE[3:0]
+                              --!  1: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:1], ARCACHE_VAL[0:0]}
+                              --!  3: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:2], ARCACHE_VAL[1:0]}
+                              --!  7: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:3], ARCACHE_VAL[2:0]}
+                              --!  8: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:3], AXI_ARCACHE[2:0]}
+                              --! 12: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:2], AXI_ARCACHE[1:0]}
+                              --! 14: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:1], AXI_ARCACHE[0:0]}
+                              --! 15: ACP_ARCACHE[3:0] <= ARCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              --!  0: ARCACHE_VAL[3:0] := "0000"
+                              --!  7: ARCACHE_VAL[3:0] := "0111"
+                              --!  8: ARCACHE_VAL[3:0] := "1000"
+                              --!  9: ARCACHE_VAL[3:0] := "1001"
+                              --! 10: ARCACHE_VAL[3:0] := "1010"
+                              --! 11: ARCACHE_VAL[3:0] := "1011"
+                              --! 12: ARCACHE_VAL[3:0] := "1100"
+                              --! 13: ARCACHE_VAL[3:0] := "1101"
+                              --! 14: ARCACHE_VAL[3:0] := "1110"
+                              --! 15: ARCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              --!  0: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
+                              --!  1: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:1], ARPROT_VAL[0:0]}
+                              --!  3: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:2], ARPROT_VAL[1:0]}
+                              --!  7: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              --!  0: ARPROT_VAL[2:0] := "000"
+                              --!  1: ARPROT_VAL[2:0] := "001"
+                              --!  2: ARPROT_VAL[2:0] := "010"
+                              --!  4: ARPROT_VAL[2:0] := "100"
+                              --!  7: ARPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         ARSHARE_TYPE        : --! @brief ACP READ SHARE TYPE:
                               --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
@@ -556,12 +583,39 @@ component ZYNQMP_ACP_ADAPTER
                               --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK :
+                              --!  0: ACP_AWCACHE[3:0] <= AXI_AWCACHE[3:0]
+                              --!  1: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:1], AWCACHE_VAL[0:0]}
+                              --!  3: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:2], AWCACHE_VAL[1:0]}
+                              --!  7: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:3], AWCACHE_VAL[2:0]}
+                              --!  8: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:3], AXI_AWCACHE[2:0]}
+                              --! 12: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:2], AXI_AWCACHE[1:0]}
+                              --! 14: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:1], AXI_AWCACHE[0:0]}
+                              --! 15: ACP_AWCACHE[3:0] <= AWCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              --!  0: AWCACHE_VAL[3:0] := "0000"
+                              --!  7: AWCACHE_VAL[3:0] := "0111"
+                              --!  8: AWCACHE_VAL[3:0] := "1000"
+                              --!  9: AWCACHE_VAL[3:0] := "1001"
+                              --! 10: AWCACHE_VAL[3:0] := "1010"
+                              --! 11: AWCACHE_VAL[3:0] := "1011"
+                              --! 12: AWCACHE_VAL[3:0] := "1100"
+                              --! 13: AWCACHE_VAL[3:0] := "1101"
+                              --! 14: AWCACHE_VAL[3:0] := "1110"
+                              --! 15: AWCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY MASK :
+                              --!  0: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
+                              --!  1: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:1], AWPROT_VAL[0:0]}
+                              --!  3: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:2], AWPROT_VAL[1:0]}
+                              --!  7: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              --!  0: AWPROT_VAL[2:0] := "000"
+                              --!  1: AWPROT_VAL[2:0] := "001"
+                              --!  2: AWPROT_VAL[2:0] := "010"
+                              --!  4: AWPROT_VAL[2:0] := "100"
+                              --!  7: AWPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         AWSHARE_TYPE        : --! @brief ACP WRITE SHARE TYPE:
                               --! 0: Not Use AXI_AWUSER, ACP_AWUSER <= Non-Sharable.
@@ -742,12 +796,39 @@ component ZYNQMP_ACP_READ_ADAPTER
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              --!  0: ACP_ARCACHE[3:0] <= AXI_ARCACHE[3:0]
+                              --!  1: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:1], ARCACHE_VAL[0:0]}
+                              --!  3: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:2], ARCACHE_VAL[1:0]}
+                              --!  7: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:3], ARCACHE_VAL[2:0]}
+                              --!  8: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:3], AXI_ARCACHE[2:0]}
+                              --! 12: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:2], AXI_ARCACHE[1:0]}
+                              --! 14: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:1], AXI_ARCACHE[0:0]}
+                              --! 15: ACP_ARCACHE[3:0] <= ARCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              --!  0: ARCACHE_VAL[3:0] := "0000"
+                              --!  7: ARCACHE_VAL[3:0] := "0111"
+                              --!  8: ARCACHE_VAL[3:0] := "1000"
+                              --!  9: ARCACHE_VAL[3:0] := "1001"
+                              --! 10: ARCACHE_VAL[3:0] := "1010"
+                              --! 11: ARCACHE_VAL[3:0] := "1011"
+                              --! 12: ARCACHE_VAL[3:0] := "1100"
+                              --! 13: ARCACHE_VAL[3:0] := "1101"
+                              --! 14: ARCACHE_VAL[3:0] := "1110"
+                              --! 15: ARCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              --!  0: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
+                              --!  1: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:1], ARPROT_VAL[0:0]}
+                              --!  3: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:2], ARPROT_VAL[1:0]}
+                              --!  7: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              --!  0: ARPROT_VAL[2:0] := "000"
+                              --!  1: ARPROT_VAL[2:0] := "001"
+                              --!  2: ARPROT_VAL[2:0] := "010"
+                              --!  4: ARPROT_VAL[2:0] := "100"
+                              --!  7: ARPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
                               --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
@@ -897,12 +978,39 @@ component ZYNQMP_ACP_WRITE_ADAPTER
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK:
+                              --!  0: ACP_AWCACHE[3:0] <= AXI_AWCACHE[3:0]
+                              --!  1: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:1], AWCACHE_VAL[0:0]}
+                              --!  3: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:2], AWCACHE_VAL[1:0]}
+                              --!  7: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:3], AWCACHE_VAL[2:0]}
+                              --!  8: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:3], AXI_AWCACHE[2:0]}
+                              --! 12: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:2], AXI_AWCACHE[1:0]}
+                              --! 14: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:1], AXI_AWCACHE[0:0]}
+                              --! 15: ACP_AWCACHE[3:0] <= AWCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              --!  0: AWCACHE_VAL[3:0] := "0000"
+                              --!  7: AWCACHE_VAL[3:0] := "0111"
+                              --!  8: AWCACHE_VAL[3:0] := "1000"
+                              --!  9: AWCACHE_VAL[3:0] := "1001"
+                              --! 10: AWCACHE_VAL[3:0] := "1010"
+                              --! 11: AWCACHE_VAL[3:0] := "1011"
+                              --! 12: AWCACHE_VAL[3:0] := "1100"
+                              --! 13: AWCACHE_VAL[3:0] := "1101"
+                              --! 14: AWCACHE_VAL[3:0] := "1110"
+                              --! 15: AWCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY MASK:
+                              --!  0: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
+                              --!  1: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:1], AWPROT_VAL[0:0]}
+                              --!  3: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:2], AWPROT_VAL[1:0]}
+                              --!  7: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              --!  0: AWPROT_VAL[2:0] := "000"
+                              --!  1: AWPROT_VAL[2:0] := "001"
+                              --!  2: AWPROT_VAL[2:0] := "010"
+                              --!  4: AWPROT_VAL[2:0] := "100"
+                              --!  7: AWPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
                               --! 0: Not Use AXI_AWUSER, ACP_AWUSER <= Non-Sharable.
@@ -1017,27 +1125,27 @@ component ZYNQMP_ACP_AxUSER
     -------------------------------------------------------------------------------
     generic (
         ACP_SHARE_TYPE      : --! @brief ACP SHARE TYPE:
-                              --! 0: Not Use AXI_AUSER, ACP_AxUSER <= Non-Sharable.
-                              --! 1: Not Use AXI_AUSER, ACP_AxUSER <= Inner-Sharable.
-                              --! 2: Not Use AXI_AUSER, ACP_AxUSER <= Outer-Sharable.
+                              --! 0: Not Use AXI_AUSER, ACP_AUSER <= Non-Sharable.
+                              --! 1: Not Use AXI_AUSER, ACP_AUSER <= Inner-Sharable.
+                              --! 2: Not Use AXI_AUSER, ACP_AUSER <= Outer-Sharable.
                               --! 3: Use 2 bit of AXI_AUSER, 
                               --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
                               --!    u[1] := AXI_AUSER[AXI_AUSER_BIT1_POS]
-                              --!    u[1:0]=00: ACP_AxUSER <= Non-Sharable
-                              --!    u[1:0]=01: ACP_AxUSER <= Inner-Sharable
-                              --!    u[1:0]=1x: ACP_AxUSER <= Outer-Sharable
+                              --!    u[1:0]=00: ACP_AUSER <= Non-Sharable
+                              --!    u[1:0]=01: ACP_AUSER <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_AUSER <= Outer-Sharable
                               --! 4: Use 1 bit of AXI_AUSER, 
                               --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AxUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_AxUSER <= Inner-Sharable
+                              --!    u[0]=0: ACP_AUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AUSER <= Inner-Sharable
                               --! 5: Use 1 bit of AXI_AUSER,
                               --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AxUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_AUSER <= Non-Sharable
+                              --!    u[0]=1: ACP_AUSER <= Outer-Sharable
                               --! 6: Use 1 bit of AXI_AUSER,
                               --!    u[0] := AXI_AUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AxUSER <= Inner-Sharable
-                              --!    u[0]=1: ACP_AxUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_AUSER <= Inner-Sharable
+                              --!    u[0]=1: ACP_AUSER <= Outer-Sharable
                               integer range 0 to 6  := 0;
         AXI_AUSER_WIDTH     : --! @brief AXI AUSER WIDTH :
                               integer := 2;

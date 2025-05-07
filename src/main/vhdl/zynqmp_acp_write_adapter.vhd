@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
 --!     @version 0.7.0
---!     @date    2025/5/4
+--!     @date    2025/5/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -57,12 +57,39 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK:
+                              --!  0: ACP_AWCACHE[3:0] <= AXI_AWCACHE[3:0]
+                              --!  1: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:1], AWCACHE_VAL[0:0]}
+                              --!  3: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:2], AWCACHE_VAL[1:0]}
+                              --!  7: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:3], AWCACHE_VAL[2:0]}
+                              --!  8: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:3], AXI_AWCACHE[2:0]}
+                              --! 12: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:2], AXI_AWCACHE[1:0]}
+                              --! 14: ACP_AWCACHE[3:0] <= {AWCACHE_VAL[3:1], AXI_AWCACHE[0:0]}
+                              --! 15: ACP_AWCACHE[3:0] <= AWCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         AWCACHE_VALUE       : --! @brief ACP_AWCACHE OVERLAY VALUE:
+                              --!  0: AWCACHE_VAL[3:0] := "0000"
+                              --!  7: AWCACHE_VAL[3:0] := "0111"
+                              --!  8: AWCACHE_VAL[3:0] := "1000"
+                              --!  9: AWCACHE_VAL[3:0] := "1001"
+                              --! 10: AWCACHE_VAL[3:0] := "1010"
+                              --! 11: AWCACHE_VAL[3:0] := "1011"
+                              --! 12: AWCACHE_VAL[3:0] := "1100"
+                              --! 13: AWCACHE_VAL[3:0] := "1101"
+                              --! 14: AWCACHE_VAL[3:0] := "1110"
+                              --! 15: AWCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         AWPROT_OVERLAY      : --! @brief ACP_AWPROT  OVERLAY MASK:
+                              --!  0: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
+                              --!  1: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:1], AWPROT_VAL[0:0]}
+                              --!  3: ACP_AWPROT[2:0] <= {AXI_AWPROT[2:2], AWPROT_VAL[1:0]}
+                              --!  7: ACP_AWPROT[2:0] <= AXI_AWPROT[2:0]
                               integer range 0 to 7  := 0;
         AWPROT_VALUE        : --! @brief ACP_AWPROT  OVERLAY VALUE:
+                              --!  0: AWPROT_VAL[2:0] := "000"
+                              --!  1: AWPROT_VAL[2:0] := "001"
+                              --!  2: AWPROT_VAL[2:0] := "010"
+                              --!  4: AWPROT_VAL[2:0] := "100"
+                              --!  7: AWPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
                               --! 0: Not Use AXI_AWUSER, ACP_AWUSER <= Non-Sharable.

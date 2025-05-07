@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
 --!     @version 0.7.0
---!     @date    2025/5/4
+--!     @date    2025/5/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -57,12 +57,39 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
+                              --!  0: ACP_ARCACHE[3:0] <= AXI_ARCACHE[3:0]
+                              --!  1: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:1], ARCACHE_VAL[0:0]}
+                              --!  3: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:2], ARCACHE_VAL[1:0]}
+                              --!  7: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:3], ARCACHE_VAL[2:0]}
+                              --!  8: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:3], AXI_ARCACHE[2:0]}
+                              --! 12: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:2], AXI_ARCACHE[1:0]}
+                              --! 14: ACP_ARCACHE[3:0] <= {ARCACHE_VAL[3:1], AXI_ARCACHE[0:0]}
+                              --! 15: ACP_ARCACHE[3:0] <= ARCACHE_VAL[3:0]
                               integer range 0 to 15 := 0;
         ARCACHE_VALUE       : --! @brief ACP_ARCACHE OVERLAY VALUE:
+                              --!  0: ARCACHE_VAL[3:0] := "0000"
+                              --!  7: ARCACHE_VAL[3:0] := "0111"
+                              --!  8: ARCACHE_VAL[3:0] := "1000"
+                              --!  9: ARCACHE_VAL[3:0] := "1001"
+                              --! 10: ARCACHE_VAL[3:0] := "1010"
+                              --! 11: ARCACHE_VAL[3:0] := "1011"
+                              --! 12: ARCACHE_VAL[3:0] := "1100"
+                              --! 13: ARCACHE_VAL[3:0] := "1101"
+                              --! 14: ARCACHE_VAL[3:0] := "1110"
+                              --! 15: ARCACHE_VAL[3:0] := "1111"
                               integer range 0 to 15 := 15;
         ARPROT_OVERLAY      : --! @brief ACP_ARPROT  OVERLAY MASK :
+                              --!  0: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
+                              --!  1: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:1], ARPROT_VAL[0:0]}
+                              --!  3: ACP_ARPROT[2:0] <= {AXI_ARPROT[2:2], ARPROT_VAL[1:0]}
+                              --!  7: ACP_ARPROT[2:0] <= AXI_ARPROT[2:0]
                               integer range 0 to 7  := 0;
         ARPROT_VALUE        : --! @brief ACP_ARPROT  OVERLAY VALUE:
+                              --!  0: ARPROT_VAL[2:0] := "000"
+                              --!  1: ARPROT_VAL[2:0] := "001"
+                              --!  2: ARPROT_VAL[2:0] := "010"
+                              --!  4: ARPROT_VAL[2:0] := "100"
+                              --!  7: ARPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
                               --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
