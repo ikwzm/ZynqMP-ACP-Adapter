@@ -49,6 +49,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
+                              --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
                               integer := 6;
         AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
                               integer range 1 to 128 := 2;
@@ -56,6 +57,9 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
+                              --! Currently on ZynqMP, ACP_AUSER bit width must be 6
+                              integer := 6;
         ACP_AUSER_WIDTH     : --! @brief ACP AUSER WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 2
                               integer range 2 to 128 := 2;
@@ -168,7 +172,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Address Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_AWID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
         ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
@@ -192,7 +196,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Response Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_BID             : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_BID             : in  std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_BRESP           : in  std_logic_vector(1 downto 0);
         ACP_BVALID          : in  std_logic;
         ACP_BREADY          : out std_logic
@@ -223,7 +227,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     type      STATE_TYPE        is (IDLE_STATE, WAIT_STATE, ADDR_STATE, DATA_STATE);
     signal    curr_state        :  STATE_TYPE;
     signal    acp_load          :  std_logic;
-    signal    xfer_id           :  std_logic_vector(AXI_ID_WIDTH-1 downto 0);
+    signal    xfer_id           :  std_logic_vector(ACP_AWID   'range);
     signal    xfer_cache        :  std_logic_vector(ACP_AWCACHE'range);
     signal    xfer_prot         :  std_logic_vector(ACP_AWPROT 'range);
     signal    xfer_start        :  boolean;
@@ -271,6 +275,22 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     constant  wq_enable         :  std_logic := '1';
     signal    wq_busy           :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    function  resize(SIGS: std_logic_vector; LEN: integer) return std_logic_vector is
+        alias     sigs_in       :  std_logic_vector(SIGS'length-1 downto 0) is SIGS;
+        variable  result        :  std_logic_vector(LEN        -1 downto 0);
+    begin
+        for i in result'range loop
+            if (sigs_in'low <= i) and (i <= sigs_in'high) then
+                result(i) := sigs_in(i);
+            else
+                result(i) := '0';
+            end if;
+        end loop;
+        return result;
+    end function;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -331,7 +351,7 @@ begin
                     when IDLE_STATE =>
                         if (AXI_AWVALID = '1' and ao_empty = '1') then
                             curr_state <= WAIT_STATE;
-                            xfer_id    <= AXI_AWID;
+                            xfer_id    <= resize(AXI_AWID, xfer_id'length);
                             xfer_cache <= AXI_AWCACHE;
                             xfer_prot  <= AXI_AWPROT;
                             page_num   <= unsigned(AXI_AWADDR(page_num'range));
@@ -775,7 +795,7 @@ begin
         ---------------------------------------------------------------------------
         QUEUE: ZYNQMP_ACP_RESPONSE_QUEUE               -- 
             generic map (                              -- 
-                AXI_ID_WIDTH    => AXI_ID_WIDTH      , -- 
+                AXI_ID_WIDTH    => ACP_ID_WIDTH      , -- 
                 QUEUE_SIZE      => RESP_QUEUE_SIZE     -- 
             )                                          -- 
             port map (                                 -- 
@@ -820,7 +840,7 @@ begin
                                 state <= IN_STATE;
                             end if;
                             AXI_BRESP <= ACP_BRESP;
-                            AXI_BID   <= ACP_BID;
+                            AXI_BID   <= resize(ACP_BID, AXI_BID'length);
                         when OUT_STATE =>
                             if (AXI_BREADY = '1') then
                                 state <= IN_STATE;

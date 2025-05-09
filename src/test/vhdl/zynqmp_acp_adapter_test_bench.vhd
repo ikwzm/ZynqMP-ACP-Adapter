@@ -103,9 +103,10 @@ architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     constant AXI_DATA_WIDTH  : integer := 128;
     constant AXI_ID_WIDTH    : integer :=   4;
     constant AXI_AUSER_WIDTH : integer :=   4;
+    constant ACP_ID_WIDTH    : integer :=   6;
     constant ACP_AUSER_WIDTH : integer :=   2;
     constant ACP_WIDTH       : AXI4_SIGNAL_WIDTH_TYPE := (
-                                 ID          => AXI_ID_WIDTH    ,
+                                 ID          => ACP_ID_WIDTH    ,
                                  AWADDR      => AXI_ADDR_WIDTH  ,
                                  ARADDR      => AXI_ADDR_WIDTH  ,
                                  AWUSER      => ACP_AUSER_WIDTH ,
@@ -515,6 +516,7 @@ begin
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
             AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     ,
+            ACP_ID_WIDTH        => ACP_ID_WIDTH        ,
             ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH     ,
             ARCACHE_OVERLAY     => CACHE_OVERLAY       ,
             ARCACHE_VALUE       => CACHE_VALUE         ,

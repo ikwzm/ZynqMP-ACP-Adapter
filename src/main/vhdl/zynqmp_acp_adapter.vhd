@@ -53,6 +53,7 @@ entity  ZYNQMP_ACP_ADAPTER is
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
+                              --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
                               integer := 6;
         AXI_AUSER_WIDTH     : --! @brief AXI AxUSER WIDTH :
                               integer range 1 to 128 := 2;
@@ -60,6 +61,9 @@ entity  ZYNQMP_ACP_ADAPTER is
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
+                              --! Currently on ZynqMP, ACP_AUSER bit width must be 6
+                              integer := 6;
         ACP_AUSER_WIDTH     : --! @brief ACP AUSER WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 2
                               integer range 2 to 128 := 2;
@@ -259,7 +263,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Read Address Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_ARID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
         ACP_ARUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
@@ -275,7 +279,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP AXI4 Read Data Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_RID             : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_RID             : in  std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_RDATA           : in  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
         ACP_RRESP           : in  std_logic_vector(1 downto 0);
         ACP_RLAST           : in  std_logic;
@@ -284,7 +288,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Address Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_AWID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
         ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
@@ -308,7 +312,7 @@ entity  ZYNQMP_ACP_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Response Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_BID             : in  std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
+        ACP_BID             : in  std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
         ACP_BRESP           : in  std_logic_vector(1 downto 0);
         ACP_BVALID          : in  std_logic;
         ACP_BREADY          : out std_logic
@@ -336,6 +340,7 @@ begin
                 AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     , --
                 AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS  , --
                 AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  , --
+                ACP_ID_WIDTH        => ACP_ID_WIDTH        , --
                 ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH     , --
                 ARCACHE_OVERLAY     => ARCACHE_OVERLAY     , --
                 ARCACHE_VALUE       => ARCACHE_VALUE       , --
@@ -483,6 +488,7 @@ begin
                 AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     , -- 
                 AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS  , --
                 AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  , --
+                ACP_ID_WIDTH        => ACP_ID_WIDTH        , --
                 ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH     , --
                 AWCACHE_OVERLAY     => AWCACHE_OVERLAY     , --
                 AWCACHE_VALUE       => AWCACHE_VALUE       , --
