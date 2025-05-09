@@ -526,6 +526,9 @@ component ZYNQMP_ACP_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ADDR_WIDTH      : --! @brief ACP ADDRESS WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 40
+                              integer range  13 to 128 := 40;
         ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
                               --! Currently on ZynqMP, ACP_RDATA/ACP_WDATA bit width
                               --! must be 128
@@ -733,7 +736,7 @@ component ZYNQMP_ACP_ADAPTER
     -- ZynqMP ACP Read Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_ARUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
@@ -758,7 +761,7 @@ component ZYNQMP_ACP_ADAPTER
     -- ZynqMP ACP Write Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
@@ -809,6 +812,9 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ADDR_WIDTH      : --! @brief ACP ADDRESS WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 40
+                              integer range  13 to 128 := 40;
         ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
                               --! Currently on ZynqMP, ACP_RDATA bit width must be 128
                               integer range 128 to 128 := 128;
@@ -920,7 +926,7 @@ component ZYNQMP_ACP_READ_ADAPTER
     -- ZynqMP ACP Read Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_ARUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
@@ -1002,6 +1008,9 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ADDR_WIDTH      : --! @brief ACP ADDRESS WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 40
+                              integer range  13 to 128 := 40;
         ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
                               --! Currently on ZynqMP, ACP_WDATA bit width must be 128
                               integer range 128 to 128 := 128;
@@ -1121,7 +1130,7 @@ component ZYNQMP_ACP_WRITE_ADAPTER
     -- ZynqMP ACP Write Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);

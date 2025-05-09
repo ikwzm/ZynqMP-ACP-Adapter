@@ -58,6 +58,9 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ADDR_WIDTH      : --! @brief ACP ADDRESS WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 40
+                              integer range  13 to 128 := 40;
         ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
                               --! Currently on ZynqMP, ACP_WDATA bit width must be 128
                               integer range 128 to 128 := 128;
@@ -177,7 +180,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -- ZynqMP ACP Write Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_AWADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
@@ -239,7 +242,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     signal    remain_len        :  integer range 0 to MAX_BURST_LENGTH-1;
     signal    byte_pos          :  unsigned( 3 downto 0);
     signal    word_pos          :  unsigned(11 downto 4);
-    signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
+    signal    page_num          :  unsigned(ACP_ADDR_WIDTH-1 downto 12);
     signal    resp_queue_ready  :  boolean;
     signal    resp_another_id   :  boolean;
     constant  WSTRB_ALL_1       :  std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0) := (others => '1');
@@ -329,6 +332,7 @@ begin
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset)
+        variable i_acp_addr : std_logic_vector(ACP_ADDR_WIDTH -1 downto  0);
         variable u_word_pos : unsigned(word_pos'high+1 downto word_pos'low);
     begin
         if (reset = '1') then
@@ -358,9 +362,10 @@ begin
                             xfer_id    <= resize(AXI_AWID, xfer_id'length);
                             xfer_cache <= AXI_AWCACHE;
                             xfer_prot  <= AXI_AWPROT;
-                            page_num   <= unsigned(AXI_AWADDR(page_num'range));
-                            word_pos   <= unsigned(AXI_AWADDR(word_pos'range));
-                            byte_pos   <= unsigned(AXI_AWADDR(byte_pos'range));
+                            i_acp_addr := resize(AXI_AWADDR, i_acp_addr'length);
+                            page_num   <= unsigned(i_acp_addr(page_num'range));
+                            word_pos   <= unsigned(i_acp_addr(word_pos'range));
+                            byte_pos   <= unsigned(i_acp_addr(byte_pos'range));
                         else
                             curr_state <= IDLE_STATE;
                         end if;

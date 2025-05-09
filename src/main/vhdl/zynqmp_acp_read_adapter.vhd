@@ -58,6 +58,9 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_ADDR_WIDTH      : --! @brief ACP ADDRESS WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 40
+                              integer range  13 to 128 := 40;
         ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
                               --! Currently on ZynqMP, ACP_RDATA bit width must be 128
                               integer range 128 to 128 := 128;
@@ -169,7 +172,7 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
     -- ZynqMP ACP Read Address Channel Signals.
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
+        ACP_ARADDR          : out std_logic_vector(ACP_ADDR_WIDTH  -1 downto 0);
         ACP_ARUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
@@ -224,7 +227,7 @@ architecture RTL of ZYNQMP_ACP_READ_ADAPTER is
     signal    burst_len         :  unsigned( 7 downto 0);
     constant  byte_pos          :  unsigned( 3 downto 0) := (others => '0');
     signal    word_pos          :  unsigned(11 downto 4);
-    signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
+    signal    page_num          :  unsigned(ACP_ADDR_WIDTH-1 downto 12);
     signal    resp_queue_valid  :  boolean;
     signal    resp_queue_ready  :  boolean;
     signal    resp_another_id   :  boolean;
@@ -284,6 +287,7 @@ begin
     --
     -------------------------------------------------------------------------------
     process(ACLK, reset)
+        variable  i_acp_addr       :  std_logic_vector(ACP_ADDR_WIDTH -1 downto  0);
         variable  next_word_pos    :  unsigned(word_pos'range);
         variable  next_remain_len  :  unsigned(remain_len'range);
     begin
@@ -318,8 +322,9 @@ begin
                             xfer_id    <= resize(AXI_ARID, xfer_id'length);
                             xfer_cache <= AXI_ARCACHE;
                             xfer_prot  <= AXI_ARPROT;
-                            page_num   <= unsigned(AXI_ARADDR(page_num'range));
-                            next_word_pos   := unsigned(AXI_ARADDR(word_pos'range));
+                            i_acp_addr := resize(AXI_ARADDR, i_acp_addr'length);
+                            page_num        <= unsigned(i_acp_addr(page_num'range));
+                            next_word_pos   := unsigned(i_acp_addr(word_pos'range));
                             next_remain_len := resize(unsigned(AXI_ARLEN),remain_len'length) + 1;
                         else
                             curr_state <= IDLE_STATE;
