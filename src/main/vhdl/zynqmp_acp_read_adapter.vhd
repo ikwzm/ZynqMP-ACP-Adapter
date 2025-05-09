@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.8.1
+--!     @version 0.8.2
 --!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
-                              integer := 6;
+                              integer := 5;
         AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
                               integer range 1 to 128 := 2;
         AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
@@ -65,8 +65,8 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               --! Currently on ZynqMP, ACP_RDATA bit width must be 128
                               integer range 128 to 128 := 128;
         ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
-                              --! Currently on ZynqMP, ACP_AUSER bit width must be 6
-                              integer := 6;
+                              --! Currently on ZynqMP, ACP_AUSER bit width must be 5
+                              integer := 5;
         ACP_AUSER_WIDTH     : --! @brief ACP AUSER WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 2
                               integer range 2 to 128 := 2;

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.8.1
+--!     @version 0.8.2
 --!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     constant AXI_AUSER_WIDTH : integer :=   4;
     constant ACP_ADDR_WIDTH  : integer :=  32;
     constant ACP_DATA_WIDTH  : integer := 128;
-    constant ACP_ID_WIDTH    : integer :=   6;
+    constant ACP_ID_WIDTH    : integer :=   5;
     constant ACP_AUSER_WIDTH : integer :=   2;
     constant ACP_WIDTH       : AXI4_SIGNAL_WIDTH_TYPE := (
                                  ID          => ACP_ID_WIDTH    ,
