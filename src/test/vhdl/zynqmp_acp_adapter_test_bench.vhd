@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.7.0
---!     @date    2025/5/4
+--!     @version 0.8.0
+--!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -515,6 +515,7 @@ begin
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
             AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     ,
+            ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH     ,
             ARCACHE_OVERLAY     => CACHE_OVERLAY       ,
             ARCACHE_VALUE       => CACHE_VALUE         ,
             ARPROT_OVERLAY      => PROT_OVERLAY        ,

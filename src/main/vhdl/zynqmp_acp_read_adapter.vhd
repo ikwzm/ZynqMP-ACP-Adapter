@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.7.0
---!     @date    2025/5/6
+--!     @version 0.8.0
+--!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -51,11 +51,14 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
         AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
-                              integer := 2;
+                              integer range 1 to 128 := 2;
         AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_AUSER_WIDTH     : --! @brief ACP AUSER WIDTH :
+                              --! Currently on ZynqMP, ACP_AUSER bit width must be 2
+                              integer range 2 to 128 := 2;
         ARCACHE_OVERLAY     : --! @brief ACP_ARCACHE OVERLAY MASK :
                               --!  0: ACP_ARCACHE[3:0] <= AXI_ARCACHE[3:0]
                               --!  1: ACP_ARCACHE[3:0] <= {AXI_ARCACHE[3:1], ARCACHE_VAL[0:0]}
@@ -92,27 +95,27 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
                               --!  7: ARPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         ARSHARE_TYPE        : --! @brief ACP SHARE TYPE:
-                              --! 0: Not Use AXI_ARUSER, ACP_ARUSER <= Non-Sharable.
-                              --! 1: Not Use AXI_ARUSER, ACP_ARUSER <= Inner-Sharable.
-                              --! 2: Not Use AXI_ARUSER, ACP_ARUSER <= Outer-Sharable.
+                              --! 0: ACP_ARUSER[1:0] <= Non-Sharable.
+                              --! 1: ACP_ARUSER[1:0] <= Inner-Sharable.
+                              --! 2: ACP_ARUSER[1:0] <= Outer-Sharable.
                               --! 3: Use 2 bit of AXI_ARUSER, 
                               --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
                               --!    u[1] := AXI_ARUSER[AXI_AUSER_BIT1_POS]
-                              --!    u[1:0]=00: ACP_ARUSER <= Non-Sharable
-                              --!    u[1:0]=01: ACP_ARUSER <= Inner-Sharable
-                              --!    u[1:0]=1x: ACP_ARUSER <= Outer-Sharable
+                              --!    u[1:0]=00: ACP_ARUSER[1:0] <= Non-Sharable
+                              --!    u[1:0]=01: ACP_ARUSER[1:0] <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_ARUSER[1:0] <= Outer-Sharable
                               --! 4: Use 1 bit of AXI_ARUSER, 
                               --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_ARUSER <= Inner-Sharable
+                              --!    u[0]=0: ACP_ARUSER[1:0] <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER[1:0] <= Inner-Sharable
                               --! 5: Use 1 bit of AXI_ARUSER,
                               --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_ARUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_ARUSER[1:0] <= Non-Sharable
+                              --!    u[0]=1: ACP_ARUSER[1:0] <= Outer-Sharable
                               --! 6: Use 1 bit of AXI_ARUSER,
                               --!    u[0] := AXI_ARUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_ARUSER <= Inner-Sharable
-                              --!    u[0]=1: ACP_ARUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_ARUSER[1:0] <= Inner-Sharable
+                              --!    u[0]=1: ACP_ARUSER[1:0] <= Outer-Sharable
                               integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
@@ -159,7 +162,7 @@ entity  ZYNQMP_ACP_READ_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_ARID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_ARADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        ACP_ARUSER          : out std_logic_vector(1 downto 0);
+        ACP_ARUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_ARLEN           : out std_logic_vector(7 downto 0);
         ACP_ARSIZE          : out std_logic_vector(2 downto 0);
         ACP_ARBURST         : out std_logic_vector(1 downto 0);
@@ -372,7 +375,8 @@ begin
     -------------------------------------------------------------------------------
     ACP_AUSER: ZYNQMP_ACP_AxUSER                       -- 
         generic map (                                  --
-            ACP_SHARE_TYPE      => ARSHARE_TYPE      , -- 
+            ACP_SHARE_TYPE      => ARSHARE_TYPE      , --
+            ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH   , --
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH   , --
             AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS, --
             AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  -- 

@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.7.0
---!     @date    2025/5/6
+--!     @version 0.8.0
+--!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -51,11 +51,14 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               integer := 6;
         AXI_AUSER_WIDTH     : --! @brief AXI_ARUSER WIDTH :
-                              integer := 2;
+                              integer range 1 to 128 := 2;
         AXI_AUSER_BIT0_POS  : --! @brief AXI_ARUSER BIT0 POSITION :
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_AUSER_WIDTH     : --! @brief ACP AUSER WIDTH :
+                              --! Currently on ZynqMP, ACP_AUSER bit width must be 2
+                              integer range 2 to 128 := 2;
         AWCACHE_OVERLAY     : --! @brief ACP_AWCACHE OVERLAY MASK:
                               --!  0: ACP_AWCACHE[3:0] <= AXI_AWCACHE[3:0]
                               --!  1: ACP_AWCACHE[3:0] <= {AXI_AWCACHE[3:1], AWCACHE_VAL[0:0]}
@@ -92,27 +95,27 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               --!  7: AWPROT_VAL[2:0] := "111"
                               integer range 0 to 7  := 2;
         AWSHARE_TYPE        : --! @brief ACP SHARE TYPE:
-                              --! 0: Not Use AXI_AWUSER, ACP_AWUSER <= Non-Sharable.
-                              --! 1: Not Use AXI_AWUSER, ACP_AWUSER <= Inner-Sharable.
-                              --! 2: Not Use AXI_AWUSER, ACP_AWUSER <= Outer-Sharable.
+                              --! 0: ACP_AWUSER[1:0] <= Non-Sharable.
+                              --! 1: ACP_AWUSER[1:0] <= Inner-Sharable.
+                              --! 2: ACP_AWUSER[1:0] <= Outer-Sharable.
                               --! 3: Use 2 bit of AXI_AWUSER, 
                               --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
                               --!    u[1] := AXI_AWUSER[AXI_AUSER_BIT1_POS]
-                              --!    u[1:0]=00: ACP_AWUSER <= Non-Sharable
-                              --!    u[1:0]=01: ACP_AWUSER <= Inner-Sharable
-                              --!    u[1:0]=1x: ACP_AWUSER <= Outer-Sharable
+                              --!    u[1:0]=00: ACP_AWUSER[1:0] <= Non-Sharable
+                              --!    u[1:0]=01: ACP_AWUSER[1:0] <= Inner-Sharable
+                              --!    u[1:0]=1x: ACP_AWUSER[1:0] <= Outer-Sharable
                               --! 4: Use 1 bit of AXI_AWUSER, 
                               --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AWUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_AWUSER <= Inner-Sharable
+                              --!    u[0]=0: ACP_AWUSER[1:0] <= Non-Sharable
+                              --!    u[0]=1: ACP_AWUSER[1:0] <= Inner-Sharable
                               --! 5: Use 1 bit of AXI_AWUSER,
                               --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AWUSER <= Non-Sharable
-                              --!    u[0]=1: ACP_AWUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_AWUSER[1:0] <= Non-Sharable
+                              --!    u[0]=1: ACP_AWUSER[1:0] <= Outer-Sharable
                               --! 6: Use 1 bit of AXI_AWUSER,
                               --!    u[0] := AXI_AWUSER[AXI_AUSER_BIT0_POS]
-                              --!    u[0]=0: ACP_AWUSER <= Inner-Sharable
-                              --!    u[0]=1: ACP_AWUSER <= Outer-Sharable
+                              --!    u[0]=0: ACP_AWUSER[1:0] <= Inner-Sharable
+                              --!    u[0]=1: ACP_AWUSER[1:0] <= Outer-Sharable
                               integer range 0 to 6  := 0;
         MAX_BURST_LENGTH    : --! @brief ACP MAX BURST LENGTH :
                               integer range 4 to 4  := 4;
@@ -167,7 +170,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
         ACP_AWID            : out std_logic_vector(AXI_ID_WIDTH    -1 downto 0);
         ACP_AWADDR          : out std_logic_vector(AXI_ADDR_WIDTH  -1 downto 0);
-        ACP_AWUSER          : out std_logic_vector(1 downto 0);
+        ACP_AWUSER          : out std_logic_vector(ACP_AUSER_WIDTH -1 downto 0);
         ACP_AWLEN           : out std_logic_vector(7 downto 0);
         ACP_AWSIZE          : out std_logic_vector(2 downto 0);
         ACP_AWBURST         : out std_logic_vector(1 downto 0);
@@ -425,6 +428,7 @@ begin
     ACP_AUSER: ZYNQMP_ACP_AxUSER                       -- 
         generic map (                                  --
             ACP_SHARE_TYPE      => AWSHARE_TYPE      , -- 
+            ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH   , --
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH   , --
             AXI_AUSER_BIT0_POS  => AXI_AUSER_BIT0_POS, --
             AXI_AUSER_BIT1_POS  => AXI_AUSER_BIT1_POS  -- 
