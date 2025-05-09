@@ -47,6 +47,7 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
+                              --! AXI_DATA_WIDTH shall be equal to ACP_DATA_WIDTH
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
@@ -57,6 +58,9 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 128
+                              integer range 128 to 128 := 128;
         ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 6
                               integer := 6;
@@ -188,8 +192,8 @@ entity  ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Data Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_WDATA           : out std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        ACP_WSTRB           : out std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+        ACP_WDATA           : out std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
+        ACP_WSTRB           : out std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0);
         ACP_WLAST           : out std_logic;
         ACP_WVALID          : out std_logic;
         ACP_WREADY          : in  std_logic;
@@ -238,7 +242,7 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     signal    page_num          :  unsigned(AXI_ADDR_WIDTH-1 downto 12);
     signal    resp_queue_ready  :  boolean;
     signal    resp_another_id   :  boolean;
-    constant  WSTRB_ALL_1       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0) := (others => '1');
+    constant  WSTRB_ALL_1       :  std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -256,8 +260,8 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     end record;
     type      WQ_INFO_VECTOR    is array(integer range <>) of WQ_INFO_TYPE;
     signal    wq_info           :  WQ_INFO_VECTOR(0 to MAX_BURST_LENGTH-1);
-    signal    wq_data           :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-    signal    wq_strb           :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+    signal    wq_data           :  std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
+    signal    wq_strb           :  std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0);
     signal    wq_valid          :  std_logic;
     signal    wq_ready          :  std_logic;
     signal    wq_last_word      :  boolean;
@@ -560,15 +564,15 @@ begin
     -------------------------------------------------------------------------------
     DATA: block
         constant  WDATA_LO      :  integer := 0;
-        constant  WDATA_HI      :  integer := WDATA_LO  + AXI_DATA_WIDTH   - 1;
+        constant  WDATA_HI      :  integer := WDATA_LO  + ACP_DATA_WIDTH   - 1;
         constant  WSTRB_LO      :  integer := WDATA_HI  + 1;
-        constant  WSTRB_HI      :  integer := WSTRB_LO  + AXI_DATA_WIDTH/8 - 1;
+        constant  WSTRB_HI      :  integer := WSTRB_LO  + ACP_DATA_WIDTH/8 - 1;
         constant  WLAST_POS     :  integer := WSTRB_HI  + 1;
         constant  WORD_BITS     :  integer := WLAST_POS - WDATA_LO         + 1;
         signal    ip_valid      :  std_logic;
         signal    ip_ready      :  std_logic;
-        signal    ip_data       :  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        signal    ip_strb       :  std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+        signal    ip_data       :  std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
+        signal    ip_strb       :  std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0);
         signal    ip_last       :  std_logic;
     begin
         ---------------------------------------------------------------------------
@@ -686,8 +690,8 @@ begin
                 return width;
             end function;
             constant  ADDR_WIDTH    :  integer := CALC_WIDTH(DATA_QUEUE_SIZE );
-            constant  DATA_WIDTH    :  integer := CALC_WIDTH(AXI_DATA_WIDTH  );
-            constant  STRB_WIDTH    :  integer := CALC_WIDTH(AXI_DATA_WIDTH/8);
+            constant  DATA_WIDTH    :  integer := CALC_WIDTH(ACP_DATA_WIDTH  );
+            constant  STRB_WIDTH    :  integer := CALC_WIDTH(ACP_DATA_WIDTH/8);
             signal    we            :  std_logic_vector(0 downto 0);
             signal    waddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);
             signal    raddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);

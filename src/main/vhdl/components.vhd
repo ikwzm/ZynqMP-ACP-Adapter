@@ -515,6 +515,7 @@ component ZYNQMP_ACP_ADAPTER
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
+                              --! AXI_DATA_WIDTH shall be equal to ACP_DATA_WIDTH
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
@@ -525,6 +526,10 @@ component ZYNQMP_ACP_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_AxUSER BIT1 POSITION :
                               integer := 1;
+        ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
+                              --! Currently on ZynqMP, ACP_RDATA/ACP_WDATA bit width
+                              --! must be 128
+                              integer range 128 to 128 := 128;
         ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 6
                               integer := 6;
@@ -744,7 +749,7 @@ component ZYNQMP_ACP_ADAPTER
     -- ZynqMP ACP AXI4 Read Data Channel Signals.
     -------------------------------------------------------------------------------
         ACP_RID             : in  std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_RDATA           : in  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+        ACP_RDATA           : in  std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
         ACP_RRESP           : in  std_logic_vector(1 downto 0);
         ACP_RLAST           : in  std_logic;
         ACP_RVALID          : in  std_logic;
@@ -768,8 +773,8 @@ component ZYNQMP_ACP_ADAPTER
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Data Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_WDATA           : out std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        ACP_WSTRB           : out std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+        ACP_WDATA           : out std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
+        ACP_WSTRB           : out std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0);
         ACP_WLAST           : out std_logic;
         ACP_WVALID          : out std_logic;
         ACP_WREADY          : in  std_logic;
@@ -793,6 +798,7 @@ component ZYNQMP_ACP_READ_ADAPTER
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
+                              --! AXI_DATA_WIDTH shall be equal to ACP_DATA_WIDTH
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
@@ -803,6 +809,9 @@ component ZYNQMP_ACP_READ_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
+                              --! Currently on ZynqMP, ACP_RDATA bit width must be 128
+                              integer range 128 to 128 := 128;
         ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 6
                               integer := 6;
@@ -927,7 +936,7 @@ component ZYNQMP_ACP_READ_ADAPTER
     -- ZynqMP ACP AXI4 Read Data Channel Signals.
     -------------------------------------------------------------------------------
         ACP_RID             : in  std_logic_vector(ACP_ID_WIDTH    -1 downto 0);
-        ACP_RDATA           : in  std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
+        ACP_RDATA           : in  std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
         ACP_RRESP           : in  std_logic_vector(1 downto 0);
         ACP_RLAST           : in  std_logic;
         ACP_RVALID          : in  std_logic;
@@ -982,6 +991,7 @@ component ZYNQMP_ACP_WRITE_ADAPTER
         AXI_ADDR_WIDTH      : --! @brief AXI ADDRRESS WIDTH :
                               integer := 64;
         AXI_DATA_WIDTH      : --! @brief AXI DATA WIDTH :
+                              --! AXI_DATA_WIDTH shall be equal to ACP_DATA_WIDTH
                               integer range 128 to 128 := 128;
         AXI_ID_WIDTH        : --! @brief AXI ID WIDTH :
                               --! AXI_ID_WIDTH shall be less than or equal to ACP_ID_WIDTH
@@ -992,6 +1002,9 @@ component ZYNQMP_ACP_WRITE_ADAPTER
                               integer := 0;
         AXI_AUSER_BIT1_POS  : --! @brief AXI_ARUSER BIT1 POSITION :
                               integer := 1;
+        ACP_DATA_WIDTH      : --! @brief ACP DATA WIDTH :
+                              --! Currently on ZynqMP, ACP_WDATA bit width must be 128
+                              integer range 128 to 128 := 128;
         ACP_ID_WIDTH        : --! @brief ACP ID WIDTH :
                               --! Currently on ZynqMP, ACP_AUSER bit width must be 6
                               integer := 6;
@@ -1123,8 +1136,8 @@ component ZYNQMP_ACP_WRITE_ADAPTER
     -------------------------------------------------------------------------------
     -- ZynqMP ACP Write Data Channel Signals.
     -------------------------------------------------------------------------------
-        ACP_WDATA           : out std_logic_vector(AXI_DATA_WIDTH  -1 downto 0);
-        ACP_WSTRB           : out std_logic_vector(AXI_DATA_WIDTH/8-1 downto 0);
+        ACP_WDATA           : out std_logic_vector(ACP_DATA_WIDTH  -1 downto 0);
+        ACP_WSTRB           : out std_logic_vector(ACP_DATA_WIDTH/8-1 downto 0);
         ACP_WLAST           : out std_logic;
         ACP_WVALID          : out std_logic;
         ACP_WREADY          : in  std_logic;
