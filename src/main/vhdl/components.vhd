@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 0.5.1                                                           --
+--!     @version 0.8.1                                                           --
 --!     @date    2025/05/09                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
