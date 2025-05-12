@@ -33,7 +33,7 @@ Fig.1 ZynqMP PS-PL Interface
 ## ZynqMP ACP アダプタとは
 
 
-ACP は前節で説明したように 16-byte(Data Widthの128bit)単位、または アライメントされた64-byte(APUのキャッシュラインサイズ)単位でしかアクセス出来ません。したがって通常の DMA などの AXI マスターを接続するときは、AXI マスターのほうでトランザクションサイズを調整する必要があります。
+### ACP と AXI Master との仲介
 
 ZynqMP ACP アダプタは、ACP の転送サイズに対応していない AXI マスターをZynqMP の ACP に接続するためのものです。具体的には AXI マスターと ZynqMP の ACP の間に入り、AXI マスターからのトランザクションを ACP のトランザクションサイズに分割します。
 
@@ -44,6 +44,10 @@ Fig.2 Sample Design
 
 <br />
 
+### 転送の分割
+
+ACP は前節で説明したように 16-byte(Data Widthの128bit)単位、または アライメントされた64-byte(APUのキャッシュラインサイズ)単位でしかアクセス出来ません。したがって通常の DMA などの AXI マスターを接続するときは、AXI マスターのほうでトランザクションサイズを調整する必要があります。
+
 例えば、AXI から転送開始アドレスが0xXX-XXXX-X024で転送サイズが183Byte のアクセスがあった場合、ZynqMP ACP アダプタは下図のように6つの ACPトランザクションに分割します。  
 
 
@@ -53,11 +57,285 @@ Fig.3 AXI Transaction to ACP Transactions
 
 <br />
 
+### ACP_AxCACHE Overlay
 
+
+ZynqMP ACP アダプタは、AXI マスターが AXI_AxCache を生成しない場合、マスターの代わりに ACP_AxCache を生成します。 詳細については、パラメータ ```ARCACHE_OVERLAY``` または ```AWCACHE_OVERLAY``` を参照してください。
+
+### ACP_AxProt Overlay
+
+ZynqMP ACP アダプタは、AXI マスターが AXI_AxProt を生成しない場合、マスターの代わりに ACP_AxProt を生成します。 詳細については、パラメータ ```ARPROT_OVERLAY``` または ```AWPROT_OVERLAY``` を参照してください。
+
+### ACP_AxUser Overlay
+
+ZynqMP ACP アダプタは、マスターが AXI_AxUser を生成しない場合、マスターの代わりに ACP_AxUser を生成します。 詳細については、パラメータ ```ARPROT_TYPE``` または ```AWPROT_TYPE``` を参照してください。
+
+# 使い方
+
+### ダウンロード
 
 ZyqnMP ACP アダプタは以下の URL で公開しています。
 
-*  https://github.com/ikwzm/ZynqMP-ACP-Adapter
+ * https://github.com/ikwzm/ZynqMP-ACP-Adapter
+
+次のようにダウンロードしてください。
+
+```console
+shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.8.tar.gz
+shell$ tar xfz v0.8.tar.gz
+shell$ cd ZynqMP-ACP-Adapter-0.8
+```
+
+### プロジェクトに IP リポジトリを追加
+
+```
+Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.8/ip
+```
+
+### デザインに ZynqMP ACP アダプタを追加
+
+```
+Vivado > Open Block Design > Add IP > select ZYNQMP_ACP_ADAPTER
+```
+
+## パラメータの説明
+
+### CORE
+
+#### AXI_WIDTH
+
+これらのパラメータは、AXI 側の様々な信号のビット幅を指定します。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```AXI_ID_WDITH```     | AXI ID WIDTH               |   1-5 |    5    |
+|```AXI_DATA_WIDTH```   | AXI DATA WIDTH             |  128  |  128    |
+|```AXI_ADDR_WDITH```   | AXI ADDRRESS WIDTH         | 1-    |   64    |
+|```AXI_AUSER_WDITH```  | AXI AxUSER WIDTH           | 1-128 |    2    |
+
+##### ```AXI_ID_WDITH```
+
+ACP ID のビット幅は 5 ビット固定です。   
+```AXI_ID_WIDTH```(AXIマスター側のIDのビット幅)は1以上5以下でなければなりません。
+
+##### ```AXI_DATA_WIDTH```
+
+ACP の DATA のビット幅は 128 ビット固定です。  
+```AXI_DATA_WIDTH```(AXIマスタ側のRDATA/WDATAのビット幅)は128である必要があります。
+
+##### ```AXI_ADDR_WDITH```
+
+ACP の ADDRESS のビット幅は 40 ビット固定です。   
+```AXI_ADDR_WIDTH```(AXIマスタ側のRDATA/WDATAのビット幅)は1以上でなければなりません。
+
+##### ```AXI_AUSER_WDITH```
+
+ACP における AxUSER のビット幅は2ビット固定です。
+ACP トランザクションは、システムにコヒーレント要求を引き起こす可能性があります。したがって、ACP へのトランザクション時に、内側と外側の共有可能属性を L2 に渡す必要があります。
+共有可能な属性を渡すには、AxUSERを使用します。AxUSERのエンコーディングを以下の表に示します。
+
+| AxUSER[1:0] | Attribute      |
+|:------------|:---------------|
+| "00"        | Non-Sharable   |
+| "01"        | Inner-Sharable |
+| "10"        | Outer-Sharable |
+| "11         | Not Supported  |
+
+
+AXI_AxUSER から ACP_AxUSER への変換は ```ARSHARE_TYPE``` または ```AWSHRE_TYPE``` に基づいて行われます。   
+この変換に有効な ```AXI_AUSER_WDITH```（AXIマスター側のAxUSERのビット幅）は異なります。   
+詳細は ```ARSHARE_TYPE``` または ```AWSHARE_TYPE``` を参照してください。
+
+#### READ/WRITE ENABLE
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+| ```READ_ENABLE```     | ACP READ ADAPTER ENABLE    |  0-1  |    1    |
+| ```WRITE_ENABLE```    | ACP WRITE ADAPTER ENABLE   |  0-1  |    1    |
+
+### READ
+
+#### READ CACHE
+
+これらのパラメータは、ACP_ARCACHE 信号の生成を制御します。  
+キャッシュ・コヒーレンシー転送を行うためには、ACP_ARCACHE は "1111" または "1110" を出力しなければなりません。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```ARCACHE_OVERLAY```  | ACP_ARCACHE OVERLAY MASK   |  0-15 |    0    |
+|```ARCACHE_VALUE```    | ACP_ARCACHE OVERLAY VALUE  |  0-15 |   15    |
+
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_ARCACHE に出力します。
+
+```VHDL
+     constant cache_mask  :  std_logic_vector(3 downto 0) 
+                          := std_logic_vector(to_unsigned(ARCACHE_OVERLAY, 4));
+     constant cache_value :  std_logic_vector(3 downto 0) 
+                          := std_logic_vector(to_unsigned(ARCACHE_VALUE  , 4));
+    
+     ACP_ARCACHE(0) <= cache_value(0) when (cache_mask(0) = '1') else AXI_ARCACHE(0);
+     ACP_ARCACHE(1) <= cache_value(1) when (cache_mask(1) = '1') else AXI_ARCACHE(1);
+     ACP_ARCACHE(2) <= cache_value(2) when (cache_mask(2) = '1') else AXI_ARCACHE(2);
+     ACP_ARCACHE(3) <= cache_value(3) when (cache_mask(3) = '1') else AXI_ARCACHE(3);
+```
+
+```ARCACHE_OVERLAY``` が 0 の場合、AXI_ARCACHE 信号は ACP_ARCACHE に直接出力されます。   
+```ARCACHE_OVERLAY``` が 15 の場合、AXI_ARCACHE 信号は使用されず、```ARCACHE_VALUE``` の値が出力されます。
+
+#### READ PROT
+
+これらのパラメータは、ACP_ARPROT 信号の生成を制御します。   
+キャッシュ・コヒーレンシー転送を行うためには、ACP_ARCPROT は "010" を出力しなければなりません。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```ARPROT_OVERLAY```   | ACP_ARPROT OVERLAY MASK    |  0-7  |    0    |
+|```ARPROT_VALUE```     | ACP_ARPROT OVERLAY VALUE   |  0-7  |    2    |
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_ARPROT に出力します。
+
+```VHDL
+     constant prot_mask  :  std_logic_vector(2 downto 0) 
+                         := std_logic_vector(to_unsigned(ARPROT_OVERLAY, 3));
+     constant prot_value :  std_logic_vector(2 downto 0) 
+                         := std_logic_vector(to_unsigned(ARPROT_VALUE  , 3));
+    
+     ACP_ARPROT(0) <= prot_value(0) when (prot_mask(0) = '1') else AXI_ARPROT(0);
+     ACP_ARPROT(1) <= prot_value(1) when (prot_mask(1) = '1') else AXI_ARPROT(1);
+     ACP_ARPROT(2) <= prot_value(2) when (prot_mask(2) = '1') else AXI_ARPROT(2);
+```
+
+```ARPROT_OVERLAY``` が 0 の場合、AXI_ARPROT 信号は ACP_ARPROT に直接出力されます。   
+```ARPROT_OVERLAY``` が 7 の場合、AXI_ARPROT 信号は使用されず、```ARPROT_VALUE``` の値が出力されます。
+
+#### READ SHARE
+
+これらのパラメータは、ACP_ARUSER 信号の生成を制御します。   
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```ARSHARE_TYPE```     | ACP READ SHARE TYPE        |  0-6  |    0    |
+
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_ARUSER に出力します。
+
+|```ARSHARE_TYPE```| AXI_ARUSER[1] | AXI_ARUSER[0] | ACP_ARUSER[1:0] | Discription     |
+|:----------------:|:-------------:|:-------------:|:---------------:|:----------------|
+|        0         |       x       |       x       |      "00"       | Non-Sharable    |
+|        1         |       x       |       x       |      "01"       | Inner-Sharable  |
+|        2         |       x       |       x       |      "10"       | Outer-Sharable  |
+|        3         |       0       |       0       |      "00"       | Non-Sharable    |
+|        3         |       0       |       1       |      "01"       | Inner-Sharable  |
+|        3         |       1       |       x       |      "10"       | Outer-Sharable  |
+|        4         |       x       |       0       |      "00"       | Non-Sharable    |
+|        4         |       x       |       1       |      "01"       | Inner-Sharable  |
+|        5         |       x       |       0       |      "00"       | Non-Sharable    |
+|        5         |       x       |       1       |      "10"       | Outer-Sharable  |
+|        6         |       x       |       0       |      "01"       | Inner-Sharable  |
+|        6         |       x       |       1       |      "10"       | Outer-Sharable  |
+
+
+#### READ REGS
+
+これらのパラメータは、内部レジスタの有無を設定します。詳細はソース・コードを参照してください。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```RRESP_QUEUE_SIZE``` | READ RESPONSE QUEUE SIZE   |  1-8  |    2    |
+|```RDATA_QUEUE_SIZE``` | READ DATA QUEUE SIZE       |  1-4  |    2    |
+|```RDATA_INTAKE_REGS```| READ DATA INTAKE REGISTER  |  0-1  |    0    |
+
+### WRITE
+
+#### WRITE CACHE
+
+これらのパラメータは、ACP_AWCACHE 信号の生成を制御します。  
+キャッシュ・コヒーレンシー転送を行うためには、ACP_AWCACHE は "1111" または "1110" を出力しなければなりません。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```AWCACHE_OVERLAY```  | ACP_AWCACHE OVERLAY MASK   |  0-15 |    0    |
+|```AWCACHE_VALUE```    | ACP_AWCACHE OVERLAY VALUE  |  0-15 |   15    |
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_AWCACHE に出力します。
+
+```VHDL
+     constant cache_mask  :  std_logic_vector(3 downto 0) 
+                          := std_logic_vector(to_unsigned(AWCACHE_OVERLAY, 4));
+     constant cache_value :  std_logic_vector(3 downto 0) 
+                          := std_logic_vector(to_unsigned(AWCACHE_VALUE  , 4));
+    
+     ACP_AWCACHE(0) <= cache_value(0) when (cache_mask(0) = '1') else AXI_AWCACHE(0);
+     ACP_AWCACHE(1) <= cache_value(1) when (cache_mask(1) = '1') else AXI_AWCACHE(1);
+     ACP_AWCACHE(2) <= cache_value(2) when (cache_mask(2) = '1') else AXI_AWCACHE(2);
+     ACP_AWCACHE(3) <= cache_value(3) when (cache_mask(3) = '1') else AXI_AWCACHE(3);
+```
+
+```AWCACHE_OVERLAY``` が 0 の場合、AXI_AWCACHE 信号は ACP_AWCACHE に直接出力されます。   
+```AWCACHE_OVERLAY``` が 15 の場合、AXI_AWCACHE 信号は使用されず、```AWCACHE_VALUE``` の値が出力されます。
+
+#### WRITE PROT
+
+これらのパラメータは、ACP_AWPROT 信号の生成を制御します。   
+キャッシュ・コヒーレンシー転送を行うためには、ACP_AWCPROT は "010" を出力しなければなりません。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```AWPROT_OVERLAY```   | ACP_AWPROT OVERLAY MASK    |  0-7  |    0    |
+|```AWPROT_VALUE```     | ACP_AWPROT OVERLAY VALUE   |  0-7  |    2    |
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_AWPROT に出力します。
+
+```VHDL
+     constant prot_mask  :  std_logic_vector(2 downto 0) 
+                         := std_logic_vector(to_unsigned(AWPROT_OVERLAY, 3));
+     constant prot_value :  std_logic_vector(2 downto 0) 
+                         := std_logic_vector(to_unsigned(AWPROT_VALUE  , 3));
+    
+     ACP_AWPROT(0) <= prot_value(0) when (prot_mask(0) = '1') else AXI_AWPROT(0);
+     ACP_AWPROT(1) <= prot_value(1) when (prot_mask(1) = '1') else AXI_AWPROT(1);
+     ACP_AWPROT(2) <= prot_value(2) when (prot_mask(2) = '1') else AXI_AWPROT(2);
+```
+
+```AWPROT_OVERLAY``` が 0 の場合、AXI_AWPROT 信号は ACP_AWPROT に直接出力されます。   
+```AWPROT_OVERLAY``` が 7 の場合、AXI_AWPROT 信号は使用されず、```AWPROT_VALUE``` の値が出力されます。
+
+#### WRITE SHARE
+
+これらのパラメータは、ACP_AWUSER 信号の生成を制御します。   
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```AWSHARE_TYPE```     | ACP WRITE SHARE TYPE       |  0-6  |    0    |
+
+これらのパラメータによって、以下のようにエンコードされた値を ACP_AWUSER に出力します。
+
+|```AWSHARE_TYPE```| AXI_AWUSER[1] | AXI_AWUSER[0] | ACP_AWUSER[1:0] | Discription     |
+|:----------------:|:-------------:|:-------------:|:---------------:|:----------------|
+|        0         |       x       |       x       |      "00"       | Non-Sharable    |
+|        1         |       x       |       x       |      "01"       | Inner-Sharable  |
+|        2         |       x       |       x       |      "10"       | Outer-Sharable  |
+|        3         |       0       |       0       |      "00"       | Non-Sharable    |
+|        3         |       0       |       1       |      "01"       | Inner-Sharable  |
+|        3         |       1       |       x       |      "10"       | Outer-Sharable  |
+|        4         |       x       |       0       |      "00"       | Non-Sharable    |
+|        4         |       x       |       1       |      "01"       | Inner-Sharable  |
+|        5         |       x       |       0       |      "00"       | Non-Sharable    |
+|        5         |       x       |       1       |      "10"       | Outer-Sharable  |
+|        6         |       x       |       0       |      "01"       | Inner-Sharable  |
+|        6         |       x       |       1       |      "10"       | Outer-Sharable  |
+
+#### WRITE REGS
+
+これらのパラメータは、内部レジスタの有無を設定します。詳細はソース・コードを参照してください。
+
+| Name                  | Discription                | Range | Default |
+|:----------------------|:---------------------------|------:|--------:|
+|```WRESP_QUEUE_SIZE``` | WRITE RESPONSE QUEUE SIZE  |  1-8  |    2    |
+|```WDATA_QUEUE_SIZE``` | WRITE DATA QUEUE SIZE      |  4-32 |   16    |
+|```WDATA_OUTLET_REGS```| WRITE DATA OUTLET REGSITER |  0-8  |    5    |
+|```WDATA_INTAKE_REGS```| WRITE DATA INTAKE REGSITER |  0-1  |    0    |
 
 
 # ZynqMP ACP アダプタの構造
