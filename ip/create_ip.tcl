@@ -3,7 +3,7 @@
 #
 set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
-set ip_version              "0.7"
+set ip_version              "0.8"
 set ip_core_revision        1
 set ip_vendor_name          "ikwzm"
 set ip_library_name         "PIPEORK"
@@ -95,14 +95,6 @@ set_property core_revision "$ip_core_revision"       [ipx::current_core]
 set_property name          "$ip_name"                [ipx::current_core]
 set_property display_name  "$ip_name"                [ipx::current_core]
 set_property description   "ZynqMP-ACP-AXI Adapter"  [ipx::current_core]
-#
-# Set Display Name
-#
-set_property display_name {AXI ADDR WIDTH}  [ipx::get_user_parameters AXI_ADDR_WIDTH  -of_objects [ipx::current_core]]
-set_property display_name {AXI DATA WIDTH}  [ipx::get_user_parameters AXI_DATA_WIDTH  -of_objects [ipx::current_core]]
-set_property display_name {AXI ID WIDTH}    [ipx::get_user_parameters AXI_ID_WIDTH    -of_objects [ipx::current_core]]
-set_property display_name {AXI AUSER WIDTH} [ipx::get_user_parameters AXI_AUSER_WIDTH -of_objects [ipx::current_core]]
-
 #
 # Generate files
 #

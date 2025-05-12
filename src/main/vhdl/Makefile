@@ -12,7 +12,7 @@ ENTITY_FILES = ../../../PipeWork/src/components/reducer.vhd         \
 components.vhd : ${ENTITY_FILES}
 	../../../PipeWork/tools/MakeComponentPackage.rb --verbose \
             --brief   'ZynqMP ACP Adapter Component Library Description' \
-            --version 0.5.1 \
+            --version 0.8.2 \
             --author  'Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>' \
             --library ZYNQMP_ACP_ADAPTER_LIBRARY \
             --package COMPONENTS \

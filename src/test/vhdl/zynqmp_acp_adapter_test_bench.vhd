@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.7.0
---!     @date    2025/5/4
+--!     @version 0.8.2
+--!     @date    2025/5/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -103,17 +103,20 @@ architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     constant AXI_DATA_WIDTH  : integer := 128;
     constant AXI_ID_WIDTH    : integer :=   4;
     constant AXI_AUSER_WIDTH : integer :=   4;
+    constant ACP_ADDR_WIDTH  : integer :=  32;
+    constant ACP_DATA_WIDTH  : integer := 128;
+    constant ACP_ID_WIDTH    : integer :=   5;
     constant ACP_AUSER_WIDTH : integer :=   2;
     constant ACP_WIDTH       : AXI4_SIGNAL_WIDTH_TYPE := (
-                                 ID          => AXI_ID_WIDTH    ,
-                                 AWADDR      => AXI_ADDR_WIDTH  ,
-                                 ARADDR      => AXI_ADDR_WIDTH  ,
+                                 ID          => ACP_ID_WIDTH    ,
+                                 AWADDR      => ACP_ADDR_WIDTH  ,
+                                 ARADDR      => ACP_ADDR_WIDTH  ,
                                  AWUSER      => ACP_AUSER_WIDTH ,
                                  ARUSER      => ACP_AUSER_WIDTH ,
                                  ALEN        => AXI4_ALEN_WIDTH ,
                                  ALOCK       => AXI4_ALOCK_WIDTH,
-                                 WDATA       => AXI_DATA_WIDTH  ,
-                                 RDATA       => AXI_DATA_WIDTH  ,
+                                 WDATA       => ACP_DATA_WIDTH  ,
+                                 RDATA       => ACP_DATA_WIDTH  ,
                                  WUSER       => 1,
                                  RUSER       => 1,
                                  BUSER       => 1);
@@ -515,6 +518,10 @@ begin
             AXI_ADDR_WIDTH      => AXI_ADDR_WIDTH      ,
             AXI_DATA_WIDTH      => AXI_DATA_WIDTH      ,
             AXI_AUSER_WIDTH     => AXI_AUSER_WIDTH     ,
+            ACP_ADDR_WIDTH      => ACP_ADDR_WIDTH      ,
+            ACP_DATA_WIDTH      => ACP_DATA_WIDTH      ,
+            ACP_ID_WIDTH        => ACP_ID_WIDTH        ,
+            ACP_AUSER_WIDTH     => ACP_AUSER_WIDTH     ,
             ARCACHE_OVERLAY     => CACHE_OVERLAY       ,
             ARCACHE_VALUE       => CACHE_VALUE         ,
             ARPROT_OVERLAY      => PROT_OVERLAY        ,
