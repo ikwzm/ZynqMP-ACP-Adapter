@@ -1,0 +1,34 @@
+- Global:
+    Print    :  true
+
+- Library:
+    Name     :  DUMMY_PLUG
+    Format   :  "nvc -L ./ --work=#{library_name} -a #{file_name}"
+    Exclude  :  ["../../Dummy_Plug/src/main/vhdl/core/sync_alt.vhd"]
+    PathList :  ["../../Dummy_Plug/src/main/vhdl/"]
+
+- Library:
+    Name     :  ZYNQMP_ACP_ADAPTER_LIBRARY
+    Format   :  "nvc -L ./ --work=#{library_name} -a #{file_name}"
+    PathList : ["../../src/main/vhdl/",
+                "../../PipeWork/src/components/reducer.vhd", 
+                "../../PipeWork/src/components/queue_register.vhd",
+                "../../PipeWork/src/components/queue_receiver.vhd",
+                "../../PipeWork/src/components/sdpram.vhd",
+                "../../PipeWork/src/components/sdpram_model.vhd"]
+
+- Library:
+    Name     :  WORK
+    Format   :  "nvc -L ./ --work=#{library_name} -a #{file_name}"
+    PathList :  ["../../src/test/vhdl"]
+    Top      :  ["ZYNQMP_ACP_ADAPTER_READ_TEST",
+                 "ZYNQMP_ACP_ADAPTER_WRITE_TEST",
+                 "ZYNQMP_ACP_ADAPTER_CACHE_OVERLAY_TEST",
+                 "ZYNQMP_ACP_ADAPTER_PROT_OVERLAY_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_0_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_1_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_2_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_4_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_5_TEST",
+                 "ZYNQMP_ACP_ADAPTER_SHARE_6_TEST"]
+
