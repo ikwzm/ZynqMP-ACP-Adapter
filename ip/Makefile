@@ -1,6 +1,6 @@
 VIVADO       ?= vivado
 IP_NAME      ?= zynqmp_acp_adapter
-IP_VERSION   ?= 0.8
+IP_VERSION   ?= 0.9
 IP_VERSION_  := $(subst .,_,$(IP_VERSION))
 IP_ROOT_DIR  := $(IP_NAME)_$(IP_VERSION)
 XGUI_FILE    := ./xgui/ZYNQMP_ACP_ADAPTER_v$(IP_VERSION_).tcl
