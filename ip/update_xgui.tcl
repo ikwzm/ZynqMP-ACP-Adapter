@@ -3,7 +3,7 @@
 #
 set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
-set ip_version              "0.8"
+set ip_version              "0.9"
 
 set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_$ip_version"]
 set project_directory       [file join [file dirname [info script]] "work"]
