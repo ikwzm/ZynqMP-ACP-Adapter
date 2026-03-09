@@ -49,15 +49,15 @@ The ZynqMP-ACP-Adapter is written in synthesizable VHDL.
 ### Download
 
 ```console
-shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.8.tar.gz
-shell$ tar xfz v0.8.tar.gz
-shell$ cd ZynqMP-ACP-Adapter-0.8
+shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.9.tar.gz
+shell$ tar xfz v0.9.tar.gz
+shell$ cd ZynqMP-ACP-Adapter-0.9
 ```
 
 ### Add IP Repository to Your Project
 
 ```
-Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.8/ip
+Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.9/ip
 ```
 
 ### Add IP to Your Design
