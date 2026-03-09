@@ -81,15 +81,15 @@ ZyqnMP ACP アダプタは以下の URL で公開しています。
 次のようにダウンロードしてください。
 
 ```console
-shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.8.tar.gz
-shell$ tar xfz v0.8.tar.gz
-shell$ cd ZynqMP-ACP-Adapter-0.8
+shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.9.tar.gz
+shell$ tar xfz v0.9.tar.gz
+shell$ cd ZynqMP-ACP-Adapter-0.9
 ```
 
 ### プロジェクトに IP リポジトリを追加
 
 ```
-Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.8/ip
+Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.9/ip
 ```
 
 ### デザインに ZynqMP ACP アダプタを追加
