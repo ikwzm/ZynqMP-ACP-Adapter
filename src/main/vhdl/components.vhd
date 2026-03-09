@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 0.8.2                                                           --
---!     @date    2025/05/09                                                      --
+--!     @version 0.9.0                                                           --
+--!     @date    2026/03/09                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2025 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2026 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
@@ -658,7 +658,7 @@ component ZYNQMP_ACP_ADAPTER
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
-                              integer range 1 to 4  := 2;
+                              integer range 0 to 4  := 2;
         RDATA_INTAKE_REGS   : --! @brief READ  DATA INTAKE REGISTER :
                               integer range 0 to 1  := 0;
         WRESP_QUEUE_SIZE    : --! @brief WRITE RESPONSE QUEUE SIZE :

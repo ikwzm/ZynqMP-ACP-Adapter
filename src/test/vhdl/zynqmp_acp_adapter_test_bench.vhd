@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.8.2
---!     @date    2025/5/9
+--!     @version 0.9.0
+--!     @date    2026/3/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2025 Ichiro Kawazome
+--      Copyright (C) 2019-2026 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -42,16 +42,23 @@ use     ieee.std_logic_1164.all;
 package ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS is
 component  ZYNQMP_ACP_ADAPTER_TEST_BENCH
     generic (
-        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
-        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
-        READ_ENABLE     : boolean := TRUE;
-        WRITE_ENABLE    : boolean := TRUE;
-        CACHE_OVERLAY   : integer := 0;
-        CACHE_VALUE     : integer := 15;
-        PROT_OVERLAY    : integer := 0;
-        PROT_VALUE      : integer := 2;
-        SHARE_TYPE      : integer := 3;
-        FINISH_ABORT    : boolean := FALSE
+        NAME                : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
+        SCENARIO_FILE       : STRING  := string'("zynqmp_acp_adapter_test.snr");
+        READ_ENABLE         : boolean := TRUE;
+        WRITE_ENABLE        : boolean := TRUE;
+        CACHE_OVERLAY       : integer range 0 to 15 := 0;
+        CACHE_VALUE         : integer range 0 to 15 := 15;
+        PROT_OVERLAY        : integer range 0 to 7  := 0;
+        PROT_VALUE          : integer range 0 to 7  := 2;
+        SHARE_TYPE          : integer range 0 to 6  := 3;
+        RRESP_QUEUE_SIZE    : integer range 1 to 8  := 2;
+        RDATA_QUEUE_SIZE    : integer range 0 to 4  := 2;
+        RDATA_INTAKE_REGS   : integer range 0 to 1  := 0;
+        WRESP_QUEUE_SIZE    : integer range 1 to 8  := 2;
+        WDATA_QUEUE_SIZE    : integer range 4 to 32 := 16;
+        WDATA_OUTLET_REGS   : integer range 0 to 8  := 5;
+        WDATA_INTAKE_REGS   : integer range 0 to 1  := 0;
+        FINISH_ABORT        : boolean := FALSE
     );
 end component;
 end package;
@@ -62,16 +69,23 @@ library ieee;
 use     ieee.std_logic_1164.all;
 entity  ZYNQMP_ACP_ADAPTER_TEST_BENCH is
     generic (
-        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
-        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
-        READ_ENABLE     : boolean := TRUE;
-        WRITE_ENABLE    : boolean := TRUE;
-        CACHE_OVERLAY   : integer := 0;
-        CACHE_VALUE     : integer := 15;
-        PROT_OVERLAY    : integer := 0;
-        PROT_VALUE      : integer := 2;
-        SHARE_TYPE      : integer := 3;
-        FINISH_ABORT    : boolean := FALSE
+        NAME                : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST_BENCH");
+        SCENARIO_FILE       : STRING  := string'("zynqmp_acp_adapter_test.snr");
+        READ_ENABLE         : boolean := TRUE;
+        WRITE_ENABLE        : boolean := TRUE;
+        CACHE_OVERLAY       : integer range 0 to 15 := 0;
+        CACHE_VALUE         : integer range 0 to 15 := 15;
+        PROT_OVERLAY        : integer range 0 to 7  := 0;
+        PROT_VALUE          : integer range 0 to 7  := 2;
+        SHARE_TYPE          : integer range 0 to 6  := 3;
+        RRESP_QUEUE_SIZE    : integer range 1 to 8  := 2;
+        RDATA_QUEUE_SIZE    : integer range 0 to 4  := 2;
+        RDATA_INTAKE_REGS   : integer range 0 to 1  := 0;
+        WRESP_QUEUE_SIZE    : integer range 1 to 8  := 2;
+        WDATA_QUEUE_SIZE    : integer range 4 to 32 := 16;
+        WDATA_OUTLET_REGS   : integer range 0 to 8  := 5;
+        WDATA_INTAKE_REGS   : integer range 0 to 1  := 0;
+        FINISH_ABORT        : boolean := FALSE
     );
 end     ZYNQMP_ACP_ADAPTER_TEST_BENCH;
 -----------------------------------------------------------------------------------
@@ -532,6 +546,13 @@ begin
             AWPROT_OVERLAY      => PROT_OVERLAY        ,
             AWPROT_VALUE        => PROT_VALUE          ,
             AWSHARE_TYPE        => SHARE_TYPE          ,
+            RRESP_QUEUE_SIZE    => RRESP_QUEUE_SIZE    ,
+            RDATA_QUEUE_SIZE    => RDATA_QUEUE_SIZE    ,
+            RDATA_INTAKE_REGS   => RDATA_INTAKE_REGS   ,
+            WRESP_QUEUE_SIZE    => WRESP_QUEUE_SIZE    ,
+            WDATA_QUEUE_SIZE    => WDATA_QUEUE_SIZE    ,
+            WDATA_OUTLET_REGS   => WDATA_OUTLET_REGS   ,
+            WDATA_INTAKE_REGS   => WDATA_INTAKE_REGS   ,
             READ_ENABLE         => ENABLE_TO_INTEGER(READ_ENABLE  ),
             WRITE_ENABLE        => ENABLE_TO_INTEGER(WRITE_ENABLE )
         )

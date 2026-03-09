@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_adapter.vhd
 --!     @brief   ZynqMP ACP Adapter
---!     @version 0.8.2
---!     @date    2025/5/9
+--!     @version 0.9.0
+--!     @date    2026/3/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2025 Ichiro Kawazome
+--      Copyright (C) 2019-2026 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -194,7 +194,7 @@ entity  ZYNQMP_ACP_ADAPTER is
         RRESP_QUEUE_SIZE    : --! @brief READ  RESPONSE QUEUE SIZE :
                               integer range 1 to 8  := 2;
         RDATA_QUEUE_SIZE    : --! @brief READ  DATA QUEUE SIZE :
-                              integer range 1 to 4  := 2;
+                              integer range 0 to 4  := 2;
         RDATA_INTAKE_REGS   : --! @brief READ  DATA INTAKE REGISTER :
                               integer range 0 to 1  := 0;
         WRESP_QUEUE_SIZE    : --! @brief WRITE RESPONSE QUEUE SIZE :

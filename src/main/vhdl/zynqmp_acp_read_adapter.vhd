@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_read_adapter.vhd
 --!     @brief   ZynqMP ACP Read Adapter
---!     @version 0.8.2
---!     @date    2025/5/9
+--!     @version 0.9.0
+--!     @date    2026/3/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2019-2025 Ichiro Kawazome
+--      Copyright (C) 2019-2026 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -528,7 +528,7 @@ begin
         OUTLET: block
             signal    i_word    :  std_logic_vector(WORD_BITS-1 downto 0);
             signal    q_word    :  std_logic_vector(WORD_BITS-1 downto 0);
-            signal    q_valid   :  std_logic_vector(2 downto 0);
+            signal    q_valid   :  std_logic_vector(DATA_QUEUE_SIZE downto 0);
         begin 
             i_word(RDATA_HI downto RDATA_LO) <= o_data;
             i_word(RRESP_HI downto RRESP_LO) <= o_resp;
