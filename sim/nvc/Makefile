@@ -6,9 +6,8 @@ COPY          = cp
 NVC           = nvc
 NVCFLAGS      = -L ./ -M 32M
 
-TEST_BENCH_0 = zynqmp_acp_adapter_test_bench
-
-TEST_BENCH_1 = zynqmp_acp_adapter_read_test          \
+TEST_BENCH   = zynqmp_acp_adapter_test               \
+               zynqmp_acp_adapter_read_test          \
                zynqmp_acp_adapter_write_test         \
                zynqmp_acp_adapter_cache_overlay_test \
                zynqmp_acp_adapter_prot_overlay_test  \
@@ -19,8 +18,6 @@ TEST_BENCH_1 = zynqmp_acp_adapter_read_test          \
                zynqmp_acp_adapter_share_5_test       \
                zynqmp_acp_adapter_share_6_test       \
                $(END_LIST)
-
-TEST_BENCH   = $(TEST_BENCH_0) $(TEST_BENCH_1)
 
 all: $(TEST_BENCH)
 
@@ -60,9 +57,6 @@ $(call NVC_ANALIZE_FILE, $(TEST_BENCH)) : analyze_libs.sh
 
 analyze_libs : $(call NVC_ANALIZE_FILE, $(TEST_BENCH))
 
-$(foreach TB, $(TEST_BENCH)  , $(eval $(call NVC_ELAB , $(TB))))
-$(foreach TB, $(TEST_BENCH_0), $(eval $(call NVC_RUN_0, $(TB),zynqmp_acp_adapter_test.snr)))
-$(foreach TB, $(TEST_BENCH_1), $(eval $(call NVC_RUN_1, $(TB),$(addsuffix .snr,$(TB)))))
+$(foreach TB, $(TEST_BENCH), $(eval $(call NVC_ELAB , $(TB))))
+$(foreach TB, $(TEST_BENCH), $(eval $(call NVC_RUN_1, $(TB),$(addsuffix .snr,$(TB)))))
 
-zynqmp_acp_adapter_test.snr : $(SCENARIO_PATH)/make_scenario.rb
-	$(SCENARIO_PATH)/make_scenario.rb
