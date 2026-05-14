@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_adapter.vhd
 --!     @brief   ZynqMP ACP Adapter
---!     @version 1.0.0
---!     @date    2026/5/13
+--!     @version 1.1.0
+--!     @date    2026/5/14
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -202,7 +202,7 @@ entity  ZYNQMP_ACP_ADAPTER is
         WDATA_QUEUE_SIZE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WDATA_OUTLET_REGS   : --! @brief DATA OUTLET REGSITER :
-                              integer range 0 to 8  := 5;
+                              integer range 0 to 8  := 2;
         WDATA_INTAKE_REGS   : --! @brief DATA INTAKE REGSITER :
                               integer range 0 to 1  := 0
     );

@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 1.0.0
---!     @date    2026/5/13
+--!     @version 1.1.0
+--!     @date    2026/5/14
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -274,6 +274,12 @@ architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    signal    wd_last           :  std_logic;
+    signal    wd_valid          :  std_logic;
+    signal    wd_ready          :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     signal    wo_last           :  std_logic;
     signal    wo_valid          :  std_logic;
     signal    wo_ready          :  std_logic;
@@ -400,7 +406,7 @@ begin
                                 curr_state <= ADDR_STATE;
                         end if;
                     when DATA_STATE =>
-                        if (wo_valid = '1' and wo_ready = '1') then
+                        if (wd_valid = '1' and wd_ready = '1') then
                             if    (remain_len > 1) then
                                 curr_state <= DATA_STATE;
                             elsif (wq_last_word) then
@@ -473,15 +479,15 @@ begin
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-    xfer_start <= (curr_state = ADDR_STATE and ao_ready = '1' and wo_ready = '1') and
+    xfer_start <= (curr_state = ADDR_STATE and ao_ready = '1' and wd_ready = '1') and
                   (wq_full_burst or wq_none_burst);
     ao_valid   <= '1' when (xfer_start) else '0';
-    wo_valid   <= '1' when (xfer_start) or
+    wd_valid   <= '1' when (xfer_start) or
                            (curr_state = DATA_STATE and wq_valid = '1') else '0';
-    wo_last    <= '1' when (curr_state = ADDR_STATE and wq_none_burst) or
+    wd_last    <= '1' when (curr_state = ADDR_STATE and wq_none_burst) or
                            (curr_state = DATA_STATE and remain_len = 1) else '0';
     wq_ready   <= '1' when (xfer_start) or
-                           (curr_state = DATA_STATE and wo_ready = '1') else '0';
+                           (curr_state = DATA_STATE and wd_ready = '1') else '0';
     burst_len  <= (others => '0') when (wq_none_burst) else 
                   to_unsigned(MAX_BURST_LENGTH-1, burst_len'length);
     -------------------------------------------------------------------------------
@@ -625,27 +631,39 @@ begin
         --
         ---------------------------------------------------------------------------
         INFO: block
-            signal    i_word   :  std_logic_vector(1 downto 0);
-            constant  q_full   :  std_logic_vector(  MAX_BURST_LENGTH-1 downto 0) := (others => '1');
-            signal    q_word   :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
-            signal    q_valid  :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
-            constant  q_shift  :  std_logic_vector(0 downto 0) := "1";
+            function  CALC_DQ_SIZE return integer is
+            begin
+                if    (DATA_QUEUE_SIZE >= 2*MAX_BURST_LENGTH) then
+                    return MAX_BURST_LENGTH;
+                elsif (DATA_QUEUE_SIZE >=   MAX_BURST_LENGTH) then
+                    return DATA_QUEUE_SIZE - MAX_BURST_LENGTH;
+                else
+                    return 0;
+                end if;
+            end function;
+            constant  DQ_SIZE  :  integer := CALC_DQ_SIZE;
+            constant  IQ_SIZE  :  integer := DATA_QUEUE_SIZE - DQ_SIZE;
+            signal    ip_word  :  std_logic_vector(1 downto 0);
+            signal    iq_word  :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
+            signal    iq_valid :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
+            constant  iq_shift :  std_logic_vector(0 downto 0) := "1";
+            signal    dq_valid :  std_logic_vector(DQ_SIZE downto 0);
         begin
             -----------------------------------------------------------------------
             --
             -----------------------------------------------------------------------
-            QUEUE: REDUCER                          -- 
+            IQ: REDUCER                             -- 
                generic map (                        -- 
-                   WORD_BITS   => 2               , -- 
+                   WORD_BITS   => ip_word'length  , -- 
                    STRB_BITS   => 1               , -- 
                    I_WIDTH     => 1               , -- 
                    O_WIDTH     => MAX_BURST_LENGTH, -- 
-                   QUEUE_SIZE  => DATA_QUEUE_SIZE , -- 
+                   QUEUE_SIZE  => IQ_SIZE         , -- 
                    VALID_MIN   => 0               , -- 
                    VALID_MAX   => MAX_BURST_LENGTH, -- 
                    O_VAL_SIZE  => 1               , --
-                   O_SHIFT_MIN => q_shift'low     , --
-                   O_SHIFT_MAX => q_shift'high    , --
+                   O_SHIFT_MIN => iq_shift'low    , --
+                   O_SHIFT_MAX => iq_shift'high   , --
                    I_JUSTIFIED => 1               , -- 
                    FLUSH_ENABLE=> 0                 -- 
                )                                    -- 
@@ -654,32 +672,52 @@ begin
                    RST         => reset           , -- In  :
                    CLR         => clear           , -- In  :
                    BUSY        => wq_busy         , -- Out :
-                   VALID       => q_valid         , -- Out :
+                   VALID       => iq_valid        , -- Out :
                    I_ENABLE    => wq_enable       , -- In  :
-                   I_DATA      => i_word          , -- In  :
+                   I_DATA      => ip_word         , -- In  :
                    I_STRB      => "1"             , -- In  :
                    I_DONE      => ip_last         , -- In  :
                    I_VAL       => ip_valid        , -- In  :
                    I_RDY       => ip_ready        , -- Out :
-                   O_DATA      => q_word          , -- Out :
+                   O_DATA      => iq_word         , -- Out :
                    O_STRB      => open            , -- Out :
                    O_DONE      => open            , -- Out :
                    O_VAL       => wq_valid        , -- Out :
                    O_RDY       => wq_ready        , -- In  :
-                   O_SHIFT     => q_shift           -- In  :
+                   O_SHIFT     => iq_shift          -- In  :
                );                                   --
-            i_word(0) <= '1' when (ip_strb = WSTRB_ALL_1) else '0';
-            i_word(1) <= ip_last;
+            ip_word(0) <= '1' when (ip_strb = WSTRB_ALL_1) else '0';
+            ip_word(1) <= ip_last;
             -----------------------------------------------------------------------
             --
             -----------------------------------------------------------------------
-            process (q_word, q_valid) begin
+            process (iq_word, iq_valid) begin
                 for i in wq_info'range loop
-                    wq_info(i).VALID       <= (q_valid( i  ) = '1');
-                    wq_info(i).STRB_ALL_1  <= (q_word(2*i  ) = '1');
-                    wq_info(i).LAST        <= (q_word(2*i+1) = '1');
+                    wq_info(i).VALID       <= (iq_valid( i  ) = '1');
+                    wq_info(i).STRB_ALL_1  <= (iq_word(2*i  ) = '1');
+                    wq_info(i).LAST        <= (iq_word(2*i+1) = '1');
                 end loop;
             end process;
+            -----------------------------------------------------------------------
+            --
+            -----------------------------------------------------------------------
+            DQ: QUEUE_REGISTER                       -- 
+                generic map (                        -- 
+                    QUEUE_SIZE  => DQ_SIZE         , -- 
+                    DATA_BITS   => 1                 -- 
+                )                                    -- 
+                port map (                           -- 
+                    CLK         => ACLK            , -- In  :
+                    RST         => reset           , -- In  :
+                    CLR         => clear           , -- In  :
+                    I_DATA(0)   => wd_last         , -- In  :
+                    I_VAL       => wd_valid        , -- In  :
+                    I_RDY       => wd_ready        , -- Out :
+                    Q_DATA(0)   => wo_last         , -- Out :
+                    Q_VAL       => dq_valid        , -- Out :
+                    Q_RDY       => wo_ready          -- In  :
+                );
+            wo_valid <= dq_valid(0);
         end block;
         ---------------------------------------------------------------------------
         --
@@ -701,7 +739,7 @@ begin
             signal    raddr_q       :  std_logic_vector(ADDR_WIDTH-1 downto 0);
         begin
             we    <= (others => '1') when (ip_valid = '1' and ip_ready = '1') else (others => '0');
-            raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wq_valid = '1' and wq_ready = '1') else raddr_q;
+            raddr <= std_logic_vector(to_01(unsigned(raddr_q)) + 1) when (wo_valid = '1' and wo_ready = '1') else raddr_q;
             process(ACLK, reset) begin
                 if (reset = '1') then
                         raddr_q <= (others => '0');

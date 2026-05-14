@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    components.vhd                                                  --
 --!     @brief   ZynqMP ACP Adapter Component Library Description                --
---!     @version 1.0.0                                                           --
---!     @date    2026/05/14                                                      --
+--!     @version 1.1.0                                                           --
+--!     @date    2026/05/15                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -688,7 +688,7 @@ component ZYNQMP_ACP_ADAPTER
         WDATA_QUEUE_SIZE    : --! @brief WRITE DATA QUEUE SIZE :
                               integer range 4 to 32 := 16;
         WDATA_OUTLET_REGS   : --! @brief DATA OUTLET REGSITER :
-                              integer range 0 to 8  := 5;
+                              integer range 0 to 8  := 2;
         WDATA_INTAKE_REGS   : --! @brief DATA INTAKE REGSITER :
                               integer range 0 to 1  := 0
     );
