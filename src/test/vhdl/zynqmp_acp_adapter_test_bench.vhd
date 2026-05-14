@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_test_bench.vhd
 --!     @brief   ZynqMP ACP ADPATER TEST BENCH
---!     @version 0.9.0
---!     @date    2026/3/9
+--!     @version 1.0.0
+--!     @date    2026/5/13
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -709,6 +709,29 @@ begin
     
  -- SYNC_PRINT_0: SYNC_PRINT generic map(string'("AXI4_TEST_1:SYNC(0)")) port map (SYNC(0));
  -- SYNC_PRINT_1: SYNC_PRINT generic map(string'("AXI4_TEST_1:SYNC(1)")) port map (SYNC(1));
+end MODEL;
+-----------------------------------------------------------------------------------
+-- ZYNQMP_ACP_ADAPTER_TEST
+-----------------------------------------------------------------------------------
+library ieee;
+use     ieee.std_logic_1164.all;
+entity  ZYNQMP_ACP_ADAPTER_TEST is
+    generic (
+        NAME            : STRING  := string'("ZYNQMP_ACP_ADAPTER_TEST");
+        SCENARIO_FILE   : STRING  := string'("zynqmp_acp_adapter_test.snr");
+        FINISH_ABORT    : boolean := FALSE
+    );
+end     ZYNQMP_ACP_ADAPTER_TEST;
+use     WORK.ZYNQMP_ACP_ADAPTER_TEST_BENCH_COMPONENTS.ZYNQMP_ACP_ADAPTER_TEST_BENCH;
+architecture MODEL of ZYNQMP_ACP_ADAPTER_TEST is
+begin
+    TB: ZYNQMP_ACP_ADAPTER_TEST_BENCH generic map (
+        NAME            => NAME          , 
+        SCENARIO_FILE   => SCENARIO_FILE ,
+        READ_ENABLE     => TRUE          ,
+        WRITE_ENABLE    => TRUE          ,
+        FINISH_ABORT    => FINISH_ABORT
+        );
 end MODEL;
 -----------------------------------------------------------------------------------
 -- ZYNQMP_ACP_ADAPTER_READ_TEST
