@@ -10,8 +10,8 @@
         - "../../PipeWork/src/components/reducer.vhd"
         - "../../PipeWork/src/components/queue_register.vhd"
         - "../../PipeWork/src/components/queue_receiver.vhd"
-        - "../../PipeWork/src/components/sdpram.vhd"
-        - "../../PipeWork/src/components/sdpram_model.vhd"
+        - "../../PipeWork/src/components/udpram.vhd"
+        - "../../PipeWork/src/components/udpram_model.vhd"
 
 - Library:
     Name     :  dummy_plug
@@ -23,4 +23,4 @@
     Name     :  work
     Execute  :  "ghdl -a --mb-comments --work=#{library_name} #{file_name}"
     PathList :  ["../../src/test/vhdl/"]
-    Top      :  ["ZYNQMP_ACP_ADAPTER_TEST_BENCH"]
+    Top      :  ["ZYNQMP_ACP_ADAPTER_TEST"]
