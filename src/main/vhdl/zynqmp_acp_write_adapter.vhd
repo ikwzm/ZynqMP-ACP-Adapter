@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
---!     @version 0.9.0
---!     @date    2026/3/9
+--!     @version 1.0.0
+--!     @date    2026/5/13
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -219,7 +219,7 @@ library ZYNQMP_ACP_ADAPTER_LIBRARY;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_RECEIVER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.QUEUE_REGISTER;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.REDUCER;
-use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.SDPRAM;
+use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.UDPRAM;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_RESPONSE_QUEUE;
 use     ZYNQMP_ACP_ADAPTER_LIBRARY.COMPONENTS.ZYNQMP_ACP_AxUSER;
 architecture RTL of ZYNQMP_ACP_WRITE_ADAPTER is
@@ -695,8 +695,6 @@ begin
                 return width;
             end function;
             constant  ADDR_WIDTH    :  integer := CALC_WIDTH(DATA_QUEUE_SIZE );
-            constant  DATA_WIDTH    :  integer := CALC_WIDTH(ACP_DATA_WIDTH  );
-            constant  STRB_WIDTH    :  integer := CALC_WIDTH(ACP_DATA_WIDTH/8);
             signal    we            :  std_logic_vector(0 downto 0);
             signal    waddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);
             signal    raddr         :  std_logic_vector(ADDR_WIDTH-1 downto 0);
@@ -720,39 +718,41 @@ begin
                     end if;
                 end if;
             end process;
-            DATA: SDPRAM                                 -- 
-                generic map(                             -- 
-                    DEPTH  =>  DATA_WIDTH+ADDR_WIDTH   , --
-                    RWIDTH =>  DATA_WIDTH              , --
-                    WWIDTH =>  DATA_WIDTH              , --
-                    WEBIT  =>  0                       , -- 
-                    ID     =>  0                         -- 
+            DATA: UDPRAM                                 -- 
+                generic map(                             --
+                    DATA_BITS   => ACP_DATA_WIDTH      , --
+                    ADDR_BITS   => ADDR_WIDTH          , --
+                    WN          => 1                   , --
+                    RN          => 1                   , --
+                    READ_REGS   => 1                   , --
+                    ID          => 0                     -- 
                 )                                        -- 
                 port map (                               -- 
-                    WCLK    => ACLK                    , -- In  :
-                    WE      => we                      , -- In  :
-                    WADDR   => waddr                   , -- In  :
-                    WDATA   => ip_data                 , -- In  :
-                    RCLK    => ACLK                    , -- In  :
-                    RADDR   => raddr                   , -- In  :
-                    RDATA   => wq_data                   -- Out :
+                    WCLK        => ACLK                , -- In  :
+                    WE          => we                  , -- In  :
+                    WADDR       => waddr               , -- In  :
+                    WDATA       => ip_data             , -- In  :
+                    RCLK        => ACLK                , -- In  :
+                    RADDR       => raddr               , -- In  :
+                    RDATA       => wq_data               -- Out :
                 );                                       -- 
-            STRB: SDPRAM                                 -- 
+            STRB: UDPRAM                                 -- 
                 generic map(                             -- 
-                    DEPTH  =>  STRB_WIDTH+ADDR_WIDTH   , --
-                    RWIDTH =>  STRB_WIDTH              , -- 
-                    WWIDTH =>  STRB_WIDTH              , -- 
-                    WEBIT  =>  0                       , -- 
-                    ID     =>  0                         -- 
+                    DATA_BITS   => ACP_DATA_WIDTH/8    , --
+                    ADDR_BITS   => ADDR_WIDTH          , --
+                    WN          => 1                   , --
+                    RN          => 1                   , --
+                    READ_REGS   => 1                   , --
+                    ID          => 0                     -- 
                 )                                        -- 
                 port map (                               -- 
-                    WCLK    => ACLK                    , -- In  :
-                    WE      => we                      , -- In  :
-                    WADDR   => waddr                   , -- In  :
-                    WDATA   => ip_strb                 , -- In  :
-                    RCLK    => ACLK                    , -- In  :
-                    RADDR   => raddr                   , -- In  :
-                    RDATA   => wq_strb                   -- Out :
+                    WCLK        => ACLK                , -- In  :
+                    WE          => we                  , -- In  :
+                    WADDR       => waddr               , -- In  :
+                    WDATA       => ip_strb             , -- In  :
+                    RCLK        => ACLK                , -- In  :
+                    RADDR       => raddr               , -- In  :
+                    RDATA       => wq_strb               -- Out :
                 );
         end block;
         ---------------------------------------------------------------------------
