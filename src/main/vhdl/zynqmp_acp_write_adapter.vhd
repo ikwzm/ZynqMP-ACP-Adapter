@@ -2,7 +2,7 @@
 --!     @file    zynqmp_acp_write_adapter.vhd
 --!     @brief   ZynqMP ACP Write Adapter
 --!     @version 1.1.0
---!     @date    2026/5/14
+--!     @date    2026/5/15
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -641,13 +641,18 @@ begin
                     return 0;
                 end if;
             end function;
+            constant  WO_FAST  :  boolean := TRUE;
             constant  DQ_SIZE  :  integer := CALC_DQ_SIZE;
             constant  IQ_SIZE  :  integer := DATA_QUEUE_SIZE - DQ_SIZE;
             signal    ip_word  :  std_logic_vector(1 downto 0);
             signal    iq_word  :  std_logic_vector(2*MAX_BURST_LENGTH-1 downto 0);
             signal    iq_valid :  std_logic_vector(  MAX_BURST_LENGTH   downto 0);
             constant  iq_shift :  std_logic_vector(0 downto 0) := "1";
+            signal    di_valid :  std_logic;
+            signal    di_ready :  std_logic;
             signal    dq_valid :  std_logic_vector(DQ_SIZE downto 0);
+            signal    dq_ready :  std_logic;
+            signal    dq_last  :  std_logic;
         begin
             -----------------------------------------------------------------------
             --
@@ -711,13 +716,38 @@ begin
                     RST         => reset           , -- In  :
                     CLR         => clear           , -- In  :
                     I_DATA(0)   => wd_last         , -- In  :
-                    I_VAL       => wd_valid        , -- In  :
-                    I_RDY       => wd_ready        , -- Out :
-                    Q_DATA(0)   => wo_last         , -- Out :
+                    I_VAL       => di_valid        , -- In  :
+                    I_RDY       => di_ready        , -- Out :
+                    Q_DATA(0)   => dq_last         , -- Out :
                     Q_VAL       => dq_valid        , -- Out :
-                    Q_RDY       => wo_ready          -- In  :
+                    Q_RDY       => dq_ready          -- In  :
                 );
-            wo_valid <= dq_valid(0);
+            -----------------------------------------------------------------------
+            -- 場合によっては DQ に入れずに直接 WO に出力する. 
+            -- DQ に入れる条件はつぎのどちらか.
+            --  1. すでに DQ に何か入っている場合.
+            --  2. DQ が空であっても wo_ready = '0' のため DQ に保持しておきたい場合.
+            -----------------------------------------------------------------------
+            WO_FAST_T: if (WO_FAST = TRUE) generate
+                di_valid <= wd_valid    when (dq_valid(0) = '1') or
+                                             (dq_valid(0) = '0' and wo_ready = '0') else '0';
+                wd_ready <= di_ready    when (dq_valid(0) = '1') or
+                                             (dq_valid(0) = '0' and wo_ready = '0') else wo_ready;
+                wo_valid <= dq_valid(0) when (dq_valid(0) = '1') else wd_valid;
+                wo_last  <= dq_last     when (dq_valid(0) = '1') else wd_last;
+                dq_ready <= wo_ready    when (dq_valid(0) = '1') else '0';
+            end generate;
+            -----------------------------------------------------------------------
+            -- 一旦 DQ に入れてから WO に出力するため、どうしても１クロック遅れる.
+            -- 動作の問題ないはずだがタイミングがずれるため従来のテストベンチでは失敗した.
+            -----------------------------------------------------------------------
+            WO_FAST_F: if (WO_FAST = FALSE) generate
+                di_valid <= wd_valid;
+                wd_ready <= di_ready;
+                wo_valid <= dq_valid(0);
+                wo_last  <= dq_last;
+                dq_ready <= wo_ready;
+            end generate;
         end block;
         ---------------------------------------------------------------------------
         --
