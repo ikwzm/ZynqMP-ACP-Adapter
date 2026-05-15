@@ -16,7 +16,7 @@ The ACP accesses can be used to (read or write) allocate into L2 cache. However,
 
 The ZynqMP-ACP-Adapter is an adapter to connect AXI Master to ZynqMP Accelerator Coherency Port(ACP).
 
-![Fig.2 Sample Design](./doc/fig02.png "Fig.2 Sample Design")
+![Fig.2 Sample Design](./doc/zynqmp_acp_adapter_design_bd.png "Fig.2 Sample Design")
 
 ### Split Transaction
 
@@ -49,15 +49,15 @@ The ZynqMP-ACP-Adapter is written in synthesizable VHDL.
 ### Download
 
 ```console
-shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v0.9.tar.gz
-shell$ tar xfz v0.9.tar.gz
-shell$ cd ZynqMP-ACP-Adapter-0.9
+shell$ wget https://github.com/ikwzm/ZynqMP-ACP-Adapter/archive/refs/tags/v1.1.tar.gz
+shell$ tar xfz v1.1.tar.gz
+shell$ cd ZynqMP-ACP-Adapter-1.1
 ```
 
 ### Add IP Repository to Your Project
 
 ```
-Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-0.9/ip
+Vivado > Settigns > IP > Repository > add ZynqMP-ACP-Adapter-1.1/ip
 ```
 
 ### Add IP to Your Design
@@ -69,6 +69,8 @@ Vivado > Open Block Design > Add IP > select ZYNQMP_ACP_ADAPTER
 ### Parameters
 
 #### CORE
+
+![Fig.4 Customize-IP(CORE)](./doc/zynqmp_acp_adapter_customize_1.png "Fig.4 Customize-IP(CORE)")
 
 ##### AXI_WIDTH
 
@@ -123,6 +125,8 @@ See ```ARSHARE_TYPE``` or ```AWSHARE_TYPE``` for details.
 | ```WRITE_ENABLE```    | ACP WRITE ADAPTER ENABLE   |  0-1  |    1    |
 
 #### READ
+
+![Fig.5 Customize-IP(READ)](./doc/zynqmp_acp_adapter_customize_2.png "Fig.5 Customize-IP(READ)")
 
 ##### READ CACHE
 
@@ -215,6 +219,8 @@ See source code for details.
 |```RDATA_INTAKE_REGS```| READ DATA INTAKE REGISTER  |  0-1  |    0    |
 
 #### WRITE
+
+![Fig.6 Customize-IP(WRITE)](./doc/zynqmp_acp_adapter_customize_3.png "Fig.6 Customize-IP(WRITE)")
 
 ##### WRITE CACHE
 
@@ -310,40 +316,40 @@ See source code for details.
 
 ### Read Adapter Structure
 
-![Fig.4 Read Adapter Structure](./doc/fig04.jpg "Fig.4 Read Adapter Structure")
+![Fig.7 Read Adapter Structure](./doc/fig04.jpg "Fi7.4 Read Adapter Structure")
 
 ### Write Adapter Structure
 
-![Fig.5 Write Adapter Structure](./doc/fig05.jpg "Fig.5 Write Adapter Structure")
+![Fig.8 Write Adapter Structure](./doc/fig05.jpg "Fig.8 Write Adapter Structure")
 
-![Fig.6 Write Data Path](./doc/fig06.jpg "Fig.6 Write Data Path")
+![Fig.9 Write Data Path](./doc/fig06.jpg "Fig.9 Write Data Path")
 
 ## Timing
 
 ### Read Timing Example
 
-![Fig.7 Read Timing Example](./doc/fig07.jpg "Fig.7 Read Timing Example")
+![Fig.10 Read Timing Example](./doc/fig07.jpg "Fig.10 Read Timing Example")
 
 ### Write Timing Example
 
-![Fig.8 Write Timing Example](./doc/fig08.jpg "Fig.8 Write Timing Example")
+![Fig.11 Write Timing Example](./doc/fig08.jpg "Fig.11 Write Timing Example")
 
 ### Multi Transaction
 
-![Fig.9 Multi Transaction(same id) Example](./doc/fig09.jpg "Fig.9 Multi Transaction(same id) Example")
+![Fig.12 Multi Transaction(same id) Example](./doc/fig09.jpg "Fig.12 Multi Transaction(same id) Example")
 
-![Fig.10 Multi Transaction(different id) Example](./doc/fig10.jpg "Fig.10 Multi Transaction(diffent id) Example")
+![Fig.13 Multi Transaction(different id) Example](./doc/fig10.jpg "Fig.13 Multi Transaction(diffent id) Example")
 
 ## Measured waveform
 
 ### Measured waveform of read transaction
 
-![Fig.12 Measured waveform of read transaction](./doc/fig12.png "Fig.12 Measured waveform of read transaction")
+![Fig.14 Measured waveform of read transaction](./doc/fig12.png "Fig.14 Measured waveform of read transaction")
 
 
 ### Measured waveform of write transaction
 
-![Fig.13 Measured waveform of write transaction](./doc/fig13.png "Fig.13 Measured waveform of write transaction")
+![Fig.15 Measured waveform of write transaction](./doc/fig13.png "Fig.15 Measured waveform of write transaction")
 
 ## Licensing
 
