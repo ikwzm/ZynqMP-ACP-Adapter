@@ -1,16 +1,16 @@
 #
 # update_xgui.tcl  Tcl script for Update XGUI
 #
-set project_name            "zynqmp_acp_adapter"
 set ip_name                 "ZYNQMP_ACP_ADAPTER"
-set ip_version              "1.0"
-
+set ip_version              "1.1"
 set ip_root_directory       [file join [file dirname [info script]] "zynqmp_acp_adapter_$ip_version"]
-set project_directory       [file join [file dirname [info script]] "work"]
+#
+# Set GUI Files (Tcl File and Logo File)
+# 
 set ip_version_             [string map {. _} $ip_version]
 set xgui_tcl_file           "${ip_name}_v${ip_version_}.tcl"
+set xgui_icon_file          "PipeWork.png"
 set need_merge_project      0
-
 #
 # Copy GUI Tcl file to IP
 #
@@ -18,6 +18,8 @@ file copy -force [file join "xgui" $xgui_tcl_file] [file join $ip_root_directory
 #
 # Open project
 #
+set project_name            "zynqmp_acp_adapter"
+set project_directory       [file join [file dirname [info script]] "work"]
 open_project [file join $project_directory $project_name]
 #
 # Open IP-XACT file
@@ -50,6 +52,16 @@ if {$need_merge_project} {
 # Update GUI Tcl file
 #
 ipx::create_xgui_files          [ipx::current_core]
+#
+# Copy GUI Logo file to IP
+#
+file copy -force [file join "xgui" $xgui_icon_file] [file join $ip_root_directory "xgui"]
+#
+# Add GUI Logo file
+# 
+ipx::add_file_group -type utility {} [ipx::current_core]
+ipx::add_file [file join "xgui" $xgui_icon_file] [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]
+set_property type LOGO [ipx::get_files [file join "xgui" $xgui_icon_file] -of_objects [ipx::get_file_groups xilinx_utilityxitfiles -of_objects [ipx::current_core]]]
 #
 # Set Display Name same as Name
 #
