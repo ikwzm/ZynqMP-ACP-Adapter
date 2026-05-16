@@ -309,7 +309,7 @@ See source code for details.
 |:----------------------|:---------------------------|------:|--------:|
 |```WRESP_QUEUE_SIZE``` | WRITE RESPONSE QUEUE SIZE  |  1-8  |    2    |
 |```WDATA_QUEUE_SIZE``` | WRITE DATA QUEUE SIZE      |  4-32 |   16    |
-|```WDATA_OUTLET_REGS```| WRITE DATA OUTLET REGSITER |  0-8  |    5    |
+|```WDATA_OUTLET_REGS```| WRITE DATA OUTLET REGSITER |  0-8  |    2    |
 |```WDATA_INTAKE_REGS```| WRITE DATA INTAKE REGSITER |  0-1  |    0    |
 
 ## Structure
