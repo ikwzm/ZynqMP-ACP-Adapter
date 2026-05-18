@@ -19,6 +19,10 @@ open_project [file join $project_directory $project_name]
 #
 ipx::package_project -root_dir $ip_root_directory -vendor $ip_vendor_name -library $ip_library_name -taxonomy /UserIP -generated_files -import_files -force
 #
+# Set Supported Families
+#
+set_property supported_families {zynq Production virtex7 Production qvirtex7 Production kintex7 Production kintex7l Production qkintex7 Production qkintex7l Production artix7 Production artix7l Production aartix7 Production qartix7 Production zynq Production qzynq Production azynq Production zynquplus Production} [ipx::current_core]
+#
 # Infer Bus Interfaces
 #
 ipx::infer_bus_interfaces xilinx.com:interface:aximm_rtl:1.0 [ipx::current_core]
@@ -28,10 +32,6 @@ ipx::infer_bus_interfaces xilinx.com:interface:axis_rtl:1.0  [ipx::current_core]
 #
 ipx::associate_bus_interfaces -busif ACP -clock ACLK [ipx::current_core]
 ipx::associate_bus_interfaces -busif AXI -clock ACLK [ipx::current_core]
-#
-# Set Supported Families
-#
-set_property supported_families {zynq Production virtex7 Production qvirtex7 Production kintex7 Production kintex7l Production qkintex7 Production qkintex7l Production artix7 Production artix7l Production aartix7 Production qartix7 Production zynq Production qzynq Production azynq Production zynquplus Production} [ipx::current_core]
 #
 # Set Core Version
 #
