@@ -63,12 +63,10 @@ current_run -implementation [get_runs impl_1]
 #
 # Set 'sources_1' and 'sim_1' fileset object
 #
-
-proc add_vhdl_file {fileset library_name file_name} {
-    set file    [file normalize $file_name]
-    set fileset [get_filesets   $fileset  ] 
-    add_files -norecurse -fileset $fileset $file
-    set file_obj [get_files -of_objects $fileset $file]
+proc add_vhdl_file {fileset_name library_name file_name} {
+    set file     [file normalize $file_name   ]
+    set fileset  [get_filesets   $fileset_name]
+    set file_obj [add_files -norecurse -fileset $fileset $file]
     set_property "file_type" "VHDL"        $file_obj
     set_property "library"   $library_name $file_obj
 }
